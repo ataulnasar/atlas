@@ -1,0 +1,26 @@
+title = "Atlas v1 gitleaks config"
+
+# Start from gitleaks' built-in ruleset (covers common provider key formats,
+# AWS/GCP/Azure creds, private keys, generic high-entropy secrets, etc.)
+# and layer repo-specific allowlisting on top.
+[extend]
+useDefault = true
+
+# gitleaks' built-in "openai-api-key" rule only matches the legacy format
+# containing the literal "T3BlbkFJ" marker. Atlas uses OpenAI keys, so add an
+# explicit, broader rule for the general "sk-" + 20-or-more-alphanumeric-chars
+# shape so newer/rotated key formats without that marker still get caught.
+[[rules]]
+id = "openai-api-key-generic"
+description = "OpenAI-style API key (sk- prefix followed by 20+ alphanumeric characters)"
+regex = '''\bsk-[A-Za-z0-9]{20,}\b'''
+tags = ["key", "openai"]
+keywords = ["sk-"]
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''\.gitleaks\.toml$''',
+  '''docker/\.env\.example$''',
+  '''atlas-evals/datasets/.*''',
+]

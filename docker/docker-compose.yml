@@ -1,0 +1,27 @@
+name: atlas-v1
+
+services:
+  atlas-core:
+    build:
+      context: ../atlas-core
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - vector-store
+
+  # Placeholder vector store — finalize choice (pgvector/Qdrant/OpenSearch) in docs/adr.
+  vector-store:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas
+      POSTGRES_DB: atlas
+    ports:
+      - "5432:5432"
+    volumes:
+      - vector-store-data:/var/lib/postgresql/data
+
+volumes:
+  vector-store-data:

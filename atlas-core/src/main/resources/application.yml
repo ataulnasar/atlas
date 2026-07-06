@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: atlas-core
+
+server:
+  port: 8080
+
+# TODO(v1): vector store, embedding provider, and LLM provider config

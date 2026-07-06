@@ -1,0 +1,7 @@
+# Core eval runner
+pytest>=8.0
+httpx>=0.27
+pydantic>=2.7
+
+# TODO(v1): add RAG-quality libs as eval metrics are implemented
+# e.g. ragas, ranx, ollama/openai/anthropic client for judge models

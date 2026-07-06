@@ -1,0 +1,50 @@
+# ---- Java / Maven / Spring (atlas-core) ----
+# NOTE: .mvn/wrapper/ is intentionally NOT ignored — it's required for ./mvnw
+# to work for anyone who clones the repo without Maven installed.
+target/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# ---- Python (atlas-evals) ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.ipynb_checkpoints
+
+# ---- Docker ----
+docker/**/.env
+docker/**/*.local.yml
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# ---- Secrets / local config ----
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Eval outputs ----
+atlas-evals/results/
+atlas-evals/**/*.out.json
