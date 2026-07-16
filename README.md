@@ -125,6 +125,8 @@ Beyond v1, in rough priority order:
 
 Roadmap items are tracked as GitHub issues; see the repository's issue tracker for current status.
 
+The working backlog for getting to v1 itself is tracked in [`docs/plan.md`](docs/plan.md).
+
 ## Repository layout
 
 | Path          | Purpose                                                             |
