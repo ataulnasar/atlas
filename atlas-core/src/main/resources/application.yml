@@ -1,6 +1,10 @@
 spring:
   application:
     name: atlas-core
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/atlas}
+    username: ${SPRING_DATASOURCE_USERNAME:atlas}
+    password: ${SPRING_DATASOURCE_PASSWORD:atlas}
 
 server:
   port: 8080
@@ -8,4 +12,4 @@ server:
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
 
-# TODO(v1): vector store, embedding provider, and LLM provider config
+# TODO(v1): embedding provider and LLM provider config

@@ -23,7 +23,9 @@ import org.springframework.boot.test.context.SpringBootTest;
  * console appender is JSON-encoded (Logstash) and that a real log line,
  * with a correlation ID in MDC, comes out as valid, parseable JSON.
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.autoconfigure.exclude="
+        + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration")
 class StructuredJsonLoggingSmokeTest {
 
     @Test

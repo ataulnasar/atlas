@@ -12,7 +12,9 @@ import org.springframework.http.ResponseEntity;
  * Every response carries an {@value CorrelationIdFilter#CORRELATION_ID_HEADER} header,
  * even for an unmapped path — the filter runs ahead of request dispatch.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "spring.autoconfigure.exclude="
+        + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration")
 class CorrelationIdHeaderIntegrationTest {
 
     @Autowired
