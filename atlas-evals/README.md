@@ -18,9 +18,15 @@ datasets/    # fixture Q&A / golden-document sets used by evals
 ## Running locally
 
 ```
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python -m evals.run --target http://localhost:8080
+uv sync
+uv run -m evals.run --target http://localhost:8080
+```
+
+## Testing and linting
+
+```
+uv run pytest
+uv run ruff check .
 ```
 
 ## Status
