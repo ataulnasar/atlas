@@ -5,4 +5,7 @@ spring:
 server:
   port: 8080
 
+# Logging is JSON by default (see logback-spring.xml); activate the "local" profile
+# (--spring.profiles.active=local) for human-readable console output.
+
 # TODO(v1): vector store, embedding provider, and LLM provider config
