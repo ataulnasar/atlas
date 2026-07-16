@@ -24,8 +24,13 @@ generation, with a Python-based quality bar (`atlas-evals`) and a documented dep
 ## What v1 includes
 
 - **RAG pipeline** (`atlas-core`) — ingest → embed → retrieve → generate, exposed over a REST API.
-- **Pluggable vector store** — starts with pgvector as the reference implementation; swappable
-  per deployment (final choice per environment tracked in `docs/adr`).
+- **Hybrid retrieval** — vector search (pgvector) and PostgreSQL full-text search, fused with
+  Reciprocal Rank Fusion (RRF), rather than vector-only similarity.
+- **SSE streaming chat** — token-level generation streamed to the client over Server-Sent Events,
+  with inline citations back to source chunks.
+- **Minimal React chat UI** — a lightweight chat page for interacting with Atlas and inspecting
+  citations, alongside the REST API.
+- **API-key-protected endpoints** — simple API-key auth in front of `atlas-core`'s HTTP API.
 - **Pluggable LLM/embedding provider** — abstracted behind a thin client interface in `atlas-core`.
 - **Offline eval suite** (`atlas-evals`) — retrieval precision/recall and answer-faithfulness
   checks run against golden Q&A datasets, driven from Python against `atlas-core`'s HTTP API.
@@ -43,14 +48,14 @@ These are explicit non-goals for this release, not oversights — they're candid
   service.
 - **Managed/hosted control plane.** There is no SaaS control plane, admin UI, or usage metering —
   Atlas is deployed and operated by whoever runs it.
-- **UI/dashboard.** Interaction with Atlas is via its REST API; no end-user or admin frontend
-  ships in v1.
-- **Streaming responses.** Generation is synchronous request/response; token streaming is not
-  wired up yet.
 - **Online/production evals.** `atlas-evals` currently runs offline against golden datasets, not
   as a continuous production quality monitor.
-- **Advanced retrieval strategies.** No hybrid search, re-ranking, or query rewriting in v1 — the
-  pipeline is intentionally the simplest version that works, to establish a quality baseline first.
+- **Re-ranking and query rewriting.** Retrieval is hybrid (vector + full-text via RRF) but stops
+  there — no cross-encoder re-ranking or LLM-based query rewriting in v1.
+- **Kubernetes.** Deployment targets are documented for single-host/Docker Compose environments;
+  no Helm charts or k8s manifests ship in v1.
+- **OAuth2.** v1 uses simple API-key auth in front of `atlas-core`; a full OAuth2/OIDC flow is not
+  implemented.
 
 ## Architecture
 
@@ -58,17 +63,21 @@ These are explicit non-goals for this release, not oversights — they're candid
 Source documents
       |
       v
- [ingest] --chunk--> [embed] --> [vector store]
+ [ingest] --chunk--> [embed] --> [vector store (pgvector) + full-text index (Postgres)]
                                        |
-User query --embed--> [retrieve] <----+
+User query --embed--> [hybrid retrieve: vector + full-text, fused via RRF] <----+
       |
       v
- [generate] --grounded answer--> User
+ [generate] --SSE stream + citations--> Chat UI / API client
 ```
 
-- **atlas-core** (Java/Spring Boot) owns the pipeline above and exposes it over HTTP.
-- **vector store** is pluggable — pgvector is the local/reference default; the production choice
-  per deployment is a documented decision (see `docs/adr`), not a hardcoded dependency.
+- **atlas-core** (Java/Spring Boot) owns the pipeline above, fuses vector and full-text retrieval
+  with RRF, streams generation over SSE, and exposes it over an API-key-protected HTTP API.
+- **vector store** is PostgreSQL 16 + pgvector — v1 does not treat this as swappable per
+  deployment, since the embedding dimension couples the schema to the embedding model in use
+  (see `docs/adr` for that decision and its implications).
+- **chat UI** is a minimal React page that talks to `atlas-core` over the same HTTP API, rendering
+  streamed responses and their citations.
 - **atlas-evals** (Python) is an external client of `atlas-core` — it has no in-process dependency
   on the Java code, so it can evaluate any running instance, local or remote.
 - **atlas-fde** is process and documentation, not a running component — it governs how the above
@@ -83,8 +92,8 @@ See [`docs/architecture/overview.md`](docs/architecture/overview.md) for more de
 
 ```bash
 # 1. Clone
-git clone https://github.com/<org>/atlas-v1.git
-cd atlas-v1
+git clone https://github.com/ataulnasar/atlas.git
+cd atlas
 
 # 2. Start local infra (vector store) and atlas-core
 cp docker/.env.example docker/.env
@@ -96,8 +105,8 @@ cd atlas-core
 
 # 4. Run the eval suite against the running instance
 cd ../atlas-evals
-pip install -r requirements.txt
-python -m evals.run --target http://localhost:8080
+uv sync
+uv run -m evals.run --target http://localhost:8080
 ```
 
 Full setup instructions live in each module's README: [`atlas-core`](atlas-core/README.md),
@@ -107,11 +116,11 @@ Full setup instructions live in each module's README: [`atlas-core`](atlas-core/
 
 Beyond v1, in rough priority order:
 
-- **Retrieval quality** — hybrid search, re-ranking, query rewriting.
+- **Retrieval quality** — re-ranking, query rewriting.
 - **Online evals** — continuous quality monitoring against live production traffic.
-- **Streaming generation** — token-level streaming over the API.
 - **Multi-tenant support** — shared-service deployment model.
-- **UI** — a minimal admin/debugging frontend for ingestion status and query tracing.
+- **UI beyond the minimal chat page** — an admin/debugging frontend for ingestion status and
+  query tracing.
 - **Managed control plane** — hosted/managed offering, once the self-hosted model is proven out.
 
 Roadmap items are tracked as GitHub issues; see the repository's issue tracker for current status.
