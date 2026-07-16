@@ -20,24 +20,24 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 class FlywayPgvectorMigrationTest {
 
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
-            DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));
+  @Container @ServiceConnection
+  static final PostgreSQLContainer<?> POSTGRES =
+      new PostgreSQLContainer<>(
+          DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
-    @Test
-    void flywayAppliesV1AndEnablesThePgvectorExtension() {
-        Integer appliedV1Migrations = jdbcTemplate.queryForObject(
-                "select count(*) from flyway_schema_history where version = '1' and success = true",
-                Integer.class);
-        assertThat(appliedV1Migrations).isEqualTo(1);
+  @Test
+  void flywayAppliesV1AndEnablesThePgvectorExtension() {
+    Integer appliedV1Migrations =
+        jdbcTemplate.queryForObject(
+            "select count(*) from flyway_schema_history where version = '1' and success = true",
+            Integer.class);
+    assertThat(appliedV1Migrations).isEqualTo(1);
 
-        Integer vectorExtensionCount = jdbcTemplate.queryForObject(
-                "select count(*) from pg_extension where extname = 'vector'",
-                Integer.class);
-        assertThat(vectorExtensionCount).isEqualTo(1);
-    }
+    Integer vectorExtensionCount =
+        jdbcTemplate.queryForObject(
+            "select count(*) from pg_extension where extname = 'vector'", Integer.class);
+    assertThat(vectorExtensionCount).isEqualTo(1);
+  }
 }
