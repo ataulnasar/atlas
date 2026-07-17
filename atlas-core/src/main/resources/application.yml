@@ -19,6 +19,8 @@ server:
 atlas:
   upload:
     max-file-size: 25MB
+  storage:
+    path: ${ATLAS_STORAGE_PATH:./data/documents}
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
