@@ -67,19 +67,28 @@ class IngestionProcessor {
       ParsedDocument parsed = parser.parse(storedFile.path());
       List<ChunkCandidate> chunks = chunkingService.chunk(parsed);
 
+      // A zero-chunk document must never reach READY: there would be nothing for retrieval to
+      // find, and a silent "successful" ingestion of no content is more misleading than a FAILED
+      // one a caller can act on.
+      if (chunks.isEmpty()) {
+        log.warn("Ingestion produced no chunks for document {}", documentId);
+        markFailedSafely(documentId, "document produced no content");
+        return;
+      }
+
       chunkRepository.insertAll(documentId, chunks);
       documentRepository.markReady(documentId);
     } catch (Exception e) {
       log.warn("Ingestion failed for document {}", documentId, e);
-      markFailedSafely(documentId, e);
+      markFailedSafely(documentId, truncatedMessage(e));
     }
   }
 
   // A FAILED transition must never itself throw — that would leave the document stuck in
   // PROCESSING forever with no way to retry or diagnose it.
-  private void markFailedSafely(UUID documentId, Exception cause) {
+  private void markFailedSafely(UUID documentId, String errorMessage) {
     try {
-      documentRepository.markFailed(documentId, truncatedMessage(cause));
+      documentRepository.markFailed(documentId, errorMessage);
     } catch (Exception markFailedFailure) {
       log.error("Failed to mark document {} as FAILED", documentId, markFailedFailure);
     }

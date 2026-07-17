@@ -21,6 +21,11 @@ class DocumentExceptionHandler {
         .body(new ApiError("document_too_large", e.getMessage()));
   }
 
+  @ExceptionHandler(EmptyDocumentException.class)
+  ResponseEntity<ApiError> handleEmptyDocument(EmptyDocumentException e) {
+    return ResponseEntity.badRequest().body(new ApiError("empty_document", e.getMessage()));
+  }
+
   // Defense in depth: fires only if a request slips past our own size check but still
   // exceeds the servlet-level ceiling (spring.servlet.multipart.max-file-size).
   @ExceptionHandler(MaxUploadSizeExceededException.class)

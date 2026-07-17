@@ -79,6 +79,21 @@ class DocumentRepository {
     return jdbcTemplate.update(sql, params) == 1;
   }
 
+  /**
+   * Resets a FAILED document back to PENDING so a re-upload of identical bytes can retry it under
+   * the same id instead of being rejected forever by the content_hash unique index. Guarded by
+   * {@code status = 'FAILED'} in the WHERE clause: if two concurrent retries race for the same row,
+   * only the one that wins the row lock first sees its update land — the loser gets {@code false}
+   * and must fall back to the ordinary duplicate rejection rather than double-firing the retry.
+   */
+  boolean resetFailedToPending(UUID id) {
+    String sql =
+        "UPDATE document SET status = 'PENDING', error_message = NULL, updated_at = now() "
+            + "WHERE id = :id AND status = 'FAILED'";
+    MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", id);
+    return jdbcTemplate.update(sql, params) == 1;
+  }
+
   void markReady(UUID id) {
     String sql = "UPDATE document SET status = 'READY', updated_at = now() WHERE id = :id";
     jdbcTemplate.update(sql, new MapSqlParameterSource().addValue("id", id));
