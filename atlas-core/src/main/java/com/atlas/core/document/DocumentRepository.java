@@ -8,6 +8,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 class DocumentRepository {
@@ -28,6 +30,11 @@ class DocumentRepository {
     this.jdbcTemplate = jdbcTemplate;
   }
 
+  // NESTED (savepoint-backed): a unique-constraint violation here must only unwind this
+  // insert, not poison DocumentUploadService's whole transaction — Postgres aborts the entire
+  // transaction on any statement error, which would otherwise take the caller's subsequent
+  // findByContentHash lookup down with it.
+  @Transactional(propagation = Propagation.NESTED)
   Document insertPending(String filename, String contentHash) {
     String sql =
         """
