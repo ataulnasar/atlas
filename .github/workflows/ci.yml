@@ -16,11 +16,11 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - working-directory: atlas-core
-        run: ./mvnw -B compile
-      - name: Check code formatting (Spotless)
+      - name: Pre-pull pgvector image (used by Testcontainers)
+        run: docker pull pgvector/pgvector:pg16
+      - name: Build, test, and check formatting (mvn verify)
         working-directory: atlas-core
-        run: ./mvnw -B spotless:check
+        run: ./mvnw -B verify
 
   atlas-evals:
     name: atlas-evals (Python)
