@@ -9,6 +9,7 @@ target/
 *.ear
 hs_err_pid*
 replay_pid*
+atlas-core/data/
 
 # ---- Python (atlas-evals) ----
 __pycache__/

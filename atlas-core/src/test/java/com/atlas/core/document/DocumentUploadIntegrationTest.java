@@ -2,9 +2,13 @@ package com.atlas.core.document;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -15,6 +19,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -37,17 +43,29 @@ class DocumentUploadIntegrationTest {
       new PostgreSQLContainer<>(
           DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));
 
+  @TempDir static Path STORAGE_ROOT;
+
+  @DynamicPropertySource
+  static void registerStorageProperties(DynamicPropertyRegistry registry) {
+    registry.add("atlas.storage.path", () -> STORAGE_ROOT.toString());
+  }
+
   @Autowired private TestRestTemplate restTemplate;
 
   @Test
-  void uploadingASupportedFileCreatesAPendingDocument() {
+  void uploadingASupportedFileCreatesAPendingDocument() throws IOException {
     ResponseEntity<DocumentUploadResponse> response =
         upload("hello.txt", MediaType.TEXT_PLAIN, "hello world".getBytes(StandardCharsets.UTF_8));
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().id()).isNotNull();
+    UUID documentId = response.getBody().id();
+    assertThat(documentId).isNotNull();
     assertThat(response.getBody().status()).isEqualTo(DocumentStatus.PENDING);
+
+    Path storedFile = STORAGE_ROOT.resolve(documentId.toString()).resolve("original.txt");
+    assertThat(storedFile).exists();
+    assertThat(Files.readString(storedFile)).isEqualTo("hello world");
   }
 
   @Test

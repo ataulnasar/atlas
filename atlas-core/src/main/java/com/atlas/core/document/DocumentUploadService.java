@@ -14,15 +14,21 @@ class DocumentUploadService {
 
   private final DocumentRepository documentRepository;
   private final UploadProperties uploadProperties;
+  private final LocalFileStorageService fileStorageService;
 
-  DocumentUploadService(DocumentRepository documentRepository, UploadProperties uploadProperties) {
+  DocumentUploadService(
+      DocumentRepository documentRepository,
+      UploadProperties uploadProperties,
+      LocalFileStorageService fileStorageService) {
     this.documentRepository = documentRepository;
     this.uploadProperties = uploadProperties;
+    this.fileStorageService = fileStorageService;
   }
 
   Document upload(MultipartFile file) {
-    SupportedContentType.fromMimeType(file.getContentType())
-        .orElseThrow(() -> new UnsupportedDocumentTypeException(file.getContentType()));
+    SupportedContentType contentType =
+        SupportedContentType.fromMimeType(file.getContentType())
+            .orElseThrow(() -> new UnsupportedDocumentTypeException(file.getContentType()));
 
     long maxBytes = uploadProperties.maxFileSize().toBytes();
     if (file.getSize() > maxBytes) {
@@ -31,12 +37,17 @@ class DocumentUploadService {
 
     String contentHash = sha256Hex(file);
 
+    Document document;
     try {
-      return documentRepository.insertPending(file.getOriginalFilename(), contentHash);
+      document = documentRepository.insertPending(file.getOriginalFilename(), contentHash);
     } catch (DuplicateKeyException e) {
       Document existing = documentRepository.findByContentHash(contentHash).orElseThrow(() -> e);
       throw new DuplicateDocumentException(existing.id());
     }
+
+    fileStorageService.store(document.id(), contentType, file);
+
+    return document;
   }
 
   private String sha256Hex(MultipartFile file) {
