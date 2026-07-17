@@ -49,3 +49,7 @@ logs/
 # ---- Eval outputs ----
 atlas-evals/results/
 atlas-evals/**/*.out.json
+
+# ---- Demo corpus ----
+# We commit corpus/manifest.json, not the ~30 downloaded PDFs it points to.
+corpus/files/

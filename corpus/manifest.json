@@ -1,0 +1,298 @@
+{
+  "$schema_note": "Atlas demo corpus manifest - EU digital regulation theme",
+  "theme": "EU digital regulation (EUR-Lex)",
+  "generated": "2026-07-17",
+  "license_note": "EUR-Lex content is reusable under the EU's document reuse policy (Commission Decision 2011/833/EU); see corpus/README.md for the full note.",
+  "documents": [
+    {
+      "id": "gdpr",
+      "title": "Regulation (EU) 2016/679 of the European Parliament and of the Council of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free movement of such data, and repealing Directive 95/46/EC (General Data Protection Regulation)",
+      "short_title": "GDPR",
+      "celex": "32016R0679",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32016R0679",
+      "category": "regulation",
+      "approx_pages": 88,
+      "filename": "gdpr.pdf"
+    },
+    {
+      "id": "ai-act",
+      "title": "Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)",
+      "short_title": "AI Act",
+      "celex": "32024R1689",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32024R1689",
+      "category": "regulation",
+      "approx_pages": 144,
+      "filename": "ai-act.pdf"
+    },
+    {
+      "id": "dsa",
+      "title": "Regulation (EU) 2022/2065 of the European Parliament and of the Council of 19 October 2022 on a Single Market For Digital Services and amending Directive 2000/31/EC (Digital Services Act)",
+      "short_title": "DSA",
+      "celex": "32022R2065",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32022R2065",
+      "category": "regulation",
+      "approx_pages": 102,
+      "filename": "dsa.pdf"
+    },
+    {
+      "id": "dma",
+      "title": "Regulation (EU) 2022/1925 of the European Parliament and of the Council of 14 September 2022 on contestable and fair markets in the digital sector (Digital Markets Act)",
+      "short_title": "DMA",
+      "celex": "32022R1925",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32022R1925",
+      "category": "regulation",
+      "approx_pages": 66,
+      "filename": "dma.pdf"
+    },
+    {
+      "id": "data-act",
+      "title": "Regulation (EU) 2023/2854 of the European Parliament and of the Council of 13 December 2023 on harmonised rules on fair access to and use of data (Data Act)",
+      "short_title": "Data Act",
+      "celex": "32023R2854",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32023R2854",
+      "category": "regulation",
+      "approx_pages": 71,
+      "filename": "data-act.pdf"
+    },
+    {
+      "id": "dga",
+      "title": "Regulation (EU) 2022/868 of the European Parliament and of the Council of 30 May 2022 on European data governance (Data Governance Act)",
+      "short_title": "Data Governance Act",
+      "celex": "32022R0868",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32022R0868",
+      "category": "regulation",
+      "approx_pages": 44,
+      "filename": "dga.pdf"
+    },
+    {
+      "id": "nis2",
+      "title": "Directive (EU) 2022/2555 of the European Parliament and of the Council of 14 December 2022 on measures for a high common level of cybersecurity across the Union (NIS 2 Directive)",
+      "short_title": "NIS2",
+      "celex": "32022L2555",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32022L2555",
+      "category": "directive",
+      "approx_pages": 73,
+      "filename": "nis2.pdf"
+    },
+    {
+      "id": "cra",
+      "title": "Regulation (EU) 2024/2847 of the European Parliament and of the Council of 23 October 2024 on horizontal cybersecurity requirements for products with digital elements (Cyber Resilience Act)",
+      "short_title": "Cyber Resilience Act",
+      "celex": "32024R2847",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32024R2847",
+      "category": "regulation",
+      "approx_pages": 81,
+      "filename": "cra.pdf"
+    },
+    {
+      "id": "eidas2",
+      "title": "Regulation (EU) 2024/1183 of the European Parliament and of the Council of 11 April 2024 amending Regulation (EU) No 910/2014 as regards establishing the European Digital Identity Framework",
+      "short_title": "eIDAS2",
+      "celex": "32024R1183",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32024R1183",
+      "category": "regulation",
+      "approx_pages": 56,
+      "filename": "eidas2.pdf"
+    },
+    {
+      "id": "p2b-regulation",
+      "title": "Regulation (EU) 2019/1150 of the European Parliament and of the Council of 20 June 2019 on promoting fairness and transparency for business users of online intermediation services",
+      "short_title": "P2B Regulation",
+      "celex": "32019R1150",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019R1150",
+      "category": "regulation",
+      "approx_pages": 23,
+      "filename": "p2b-regulation.pdf"
+    },
+    {
+      "id": "eprivacy-directive",
+      "title": "Directive 2002/58/EC of the European Parliament and of the Council of 12 July 2002 concerning the processing of personal data and the protection of privacy in the electronic communications sector",
+      "short_title": "ePrivacy Directive",
+      "celex": "32002L0058",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32002L0058",
+      "category": "directive",
+      "approx_pages": 11,
+      "filename": "eprivacy-directive.pdf"
+    },
+    {
+      "id": "open-data-directive",
+      "title": "Directive (EU) 2019/1024 of the European Parliament and of the Council of 20 June 2019 on open data and the re-use of public sector information (recast)",
+      "short_title": "Open Data Directive",
+      "celex": "32019L1024",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019L1024",
+      "category": "directive",
+      "approx_pages": 28,
+      "filename": "open-data-directive.pdf"
+    },
+    {
+      "id": "dsm-copyright-directive",
+      "title": "Directive (EU) 2019/790 of the European Parliament and of the Council of 17 April 2019 on copyright and related rights in the Digital Single Market",
+      "short_title": "DSM Copyright Directive",
+      "celex": "32019L0790",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019L0790",
+      "category": "directive",
+      "approx_pages": 34,
+      "filename": "dsm-copyright-directive.pdf"
+    },
+    {
+      "id": "accessibility-act",
+      "title": "Directive (EU) 2019/882 of the European Parliament and of the Council of 17 April 2019 on the accessibility requirements for products and services",
+      "short_title": "European Accessibility Act",
+      "celex": "32019L0882",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019L0882",
+      "category": "directive",
+      "approx_pages": 46,
+      "filename": "accessibility-act.pdf"
+    },
+    {
+      "id": "cybersecurity-act",
+      "title": "Regulation (EU) 2019/881 of the European Parliament and of the Council of 17 April 2019 on ENISA and on information and communications technology cybersecurity certification (Cybersecurity Act)",
+      "short_title": "Cybersecurity Act",
+      "celex": "32019R0881",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019R0881",
+      "category": "regulation",
+      "approx_pages": 55,
+      "filename": "cybersecurity-act.pdf"
+    },
+    {
+      "id": "free-flow-non-personal-data",
+      "title": "Regulation (EU) 2018/1807 of the European Parliament and of the Council of 14 November 2018 on a framework for the free flow of non-personal data in the European Union",
+      "short_title": "Free Flow of Non-Personal Data Regulation",
+      "celex": "32018R1807",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32018R1807",
+      "category": "regulation",
+      "approx_pages": 10,
+      "filename": "free-flow-non-personal-data.pdf"
+    },
+    {
+      "id": "eecc",
+      "title": "Directive (EU) 2018/1972 of the European Parliament and of the Council of 11 December 2018 establishing the European Electronic Communications Code (Recast)",
+      "short_title": "European Electronic Communications Code",
+      "celex": "32018L1972",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32018L1972",
+      "category": "directive",
+      "approx_pages": 179,
+      "filename": "eecc.pdf"
+    },
+    {
+      "id": "digital-content-directive",
+      "title": "Directive (EU) 2019/770 of the European Parliament and of the Council of 20 May 2019 on certain aspects concerning contracts for the supply of digital content and digital services",
+      "short_title": "Digital Content Directive",
+      "celex": "32019L0770",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019L0770",
+      "category": "directive",
+      "approx_pages": 27,
+      "filename": "digital-content-directive.pdf"
+    },
+    {
+      "id": "mica",
+      "title": "Regulation (EU) 2023/1114 of the European Parliament and of the Council of 31 May 2023 on markets in crypto-assets (MiCA)",
+      "short_title": "MiCA",
+      "celex": "32023R1114",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32023R1114",
+      "category": "regulation",
+      "approx_pages": 166,
+      "filename": "mica.pdf"
+    },
+    {
+      "id": "dora",
+      "title": "Regulation (EU) 2022/2554 of the European Parliament and of the Council of 14 December 2022 on digital operational resilience for the financial sector (DORA)",
+      "short_title": "DORA",
+      "celex": "32022R2554",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32022R2554",
+      "category": "regulation",
+      "approx_pages": 79,
+      "filename": "dora.pdf"
+    },
+    {
+      "id": "avmsd-amendment",
+      "title": "Directive (EU) 2018/1808 of the European Parliament and of the Council of 14 November 2018 amending Directive 2010/13/EU (Audiovisual Media Services Directive)",
+      "short_title": "AVMSD Amendment",
+      "celex": "32018L1808",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32018L1808",
+      "category": "directive",
+      "approx_pages": 24,
+      "filename": "avmsd-amendment.pdf"
+    },
+    {
+      "id": "adequacy-uk",
+      "title": "Commission Implementing Decision (EU) 2021/1772 of 28 June 2021 pursuant to Regulation (EU) 2016/679 on the adequate protection of personal data by the United Kingdom",
+      "short_title": "UK Adequacy Decision",
+      "celex": "32021D1772",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32021D1772",
+      "category": "guideline",
+      "approx_pages": 68,
+      "filename": "adequacy-uk.pdf"
+    },
+    {
+      "id": "adequacy-us-dpf",
+      "title": "Commission Implementing Decision (EU) 2023/1795 of 10 July 2023 pursuant to Regulation (EU) 2016/679 on the adequate level of protection of personal data under the EU-US Data Privacy Framework",
+      "short_title": "EU-US Data Privacy Framework Adequacy Decision",
+      "celex": "32023D1795",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32023D1795",
+      "category": "guideline",
+      "approx_pages": 112,
+      "filename": "adequacy-us-dpf.pdf"
+    },
+    {
+      "id": "scc-decision",
+      "title": "Commission Implementing Decision (EU) 2021/914 of 4 June 2021 on standard contractual clauses for the transfer of personal data to third countries pursuant to Regulation (EU) 2016/679",
+      "short_title": "Standard Contractual Clauses Decision",
+      "celex": "32021D0914",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32021D0914",
+      "category": "guideline",
+      "approx_pages": 31,
+      "filename": "scc-decision.pdf"
+    },
+    {
+      "id": "adequacy-japan",
+      "title": "Commission Implementing Decision (EU) 2019/419 of 23 January 2019 pursuant to Regulation (EU) 2016/679 on the adequate protection of personal data by Japan",
+      "short_title": "Japan Adequacy Decision",
+      "celex": "32019D0419",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019D0419",
+      "category": "guideline",
+      "approx_pages": 58,
+      "filename": "adequacy-japan.pdf"
+    },
+    {
+      "id": "adequacy-south-korea",
+      "title": "Commission Implementing Decision (EU) 2022/254 of 17 December 2021 pursuant to Regulation (EU) 2016/679 on the adequate protection of personal data by the Republic of Korea",
+      "short_title": "South Korea Adequacy Decision",
+      "celex": "32022D0254",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32022D0254",
+      "category": "guideline",
+      "approx_pages": 90,
+      "filename": "adequacy-south-korea.pdf"
+    },
+    {
+      "id": "rec-illegal-content",
+      "title": "Commission Recommendation (EU) 2018/334 of 1 March 2018 on measures to effectively tackle illegal content online",
+      "short_title": "Illegal Content Recommendation",
+      "celex": "32018H0334",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32018H0334",
+      "category": "guideline",
+      "approx_pages": 12,
+      "filename": "rec-illegal-content.pdf"
+    },
+    {
+      "id": "rec-5g-cybersecurity",
+      "title": "Commission Recommendation (EU) 2019/534 of 26 March 2019 on the Cybersecurity of 5G networks",
+      "short_title": "5G Cybersecurity Recommendation",
+      "celex": "32019H0534",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32019H0534",
+      "category": "guideline",
+      "approx_pages": 6,
+      "filename": "rec-5g-cybersecurity.pdf"
+    },
+    {
+      "id": "nis1",
+      "title": "Directive (EU) 2016/1148 of the European Parliament and of the Council of 6 July 2016 concerning measures for a high common level of security of network and information systems across the Union",
+      "short_title": "NIS1 Directive",
+      "celex": "32016L1148",
+      "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32016L1148",
+      "category": "directive",
+      "approx_pages": 30,
+      "filename": "nis1.pdf"
+    }
+  ]
+}
