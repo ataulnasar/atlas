@@ -21,6 +21,11 @@ atlas:
     max-file-size: 25MB
   storage:
     path: ${ATLAS_STORAGE_PATH:./data/documents}
+  chunking:
+    # Changing these invalidates eval comparability until the corpus is re-ingested —
+    # see ChunkingProperties.
+    max-tokens: 500
+    overlap-tokens: 60
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
