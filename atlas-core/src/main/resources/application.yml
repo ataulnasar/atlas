@@ -26,6 +26,11 @@ atlas:
     # see ChunkingProperties.
     max-tokens: 500
     overlap-tokens: 60
+  parsing:
+    # Line-level noise (e.g. a source's repeating page footer) to strip before chunking.
+    # Empty by default — Atlas core is corpus-agnostic; a deployment supplies its own
+    # patterns here or via ATLAS_PARSING_STRIP_LINE_PATTERNS. See ParsingProperties.
+    strip-line-patterns: ${ATLAS_PARSING_STRIP_LINE_PATTERNS:}
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
