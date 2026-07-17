@@ -4,7 +4,7 @@ Python harness for evaluating `atlas-core`'s retrieval and generation quality.
 
 ## Stack
 
-- Python 3.11+
+- Python 3.12+
 - `pytest`-based eval runner (or a lightweight custom runner — TBD)
 - Calls `atlas-core` over its HTTP API; no in-process Java dependency
 
