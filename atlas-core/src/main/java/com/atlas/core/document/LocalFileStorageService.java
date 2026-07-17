@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,8 +29,7 @@ class LocalFileStorageService {
    * preserved only in the document row.
    */
   Path store(UUID documentId, SupportedContentType contentType, MultipartFile file) {
-    String safeFileName = "original." + contentType.extension();
-    Path targetPath = resolveWithinRoot(documentId.toString(), safeFileName);
+    Path targetPath = pathFor(documentId, contentType);
     try {
       Files.createDirectories(targetPath.getParent());
       file.transferTo(targetPath);
@@ -37,6 +37,25 @@ class LocalFileStorageService {
       throw new UncheckedIOException("Failed to store uploaded file at " + targetPath, e);
     }
     return targetPath;
+  }
+
+  /**
+   * Finds the previously stored file for a document, trying each supported content type's
+   * conventional filename in turn. There's no separate record of "which type was this" — the
+   * on-disk naming convention from {@link #store} is itself the source of truth at read time.
+   */
+  Optional<StoredFile> findStoredFile(UUID documentId) {
+    for (SupportedContentType contentType : SupportedContentType.values()) {
+      Path candidate = pathFor(documentId, contentType);
+      if (Files.exists(candidate)) {
+        return Optional.of(new StoredFile(candidate, contentType));
+      }
+    }
+    return Optional.empty();
+  }
+
+  private Path pathFor(UUID documentId, SupportedContentType contentType) {
+    return resolveWithinRoot(documentId.toString(), "original." + contentType.extension());
   }
 
   /**
@@ -56,4 +75,6 @@ class LocalFileStorageService {
     }
     return normalized;
   }
+
+  record StoredFile(Path path, SupportedContentType contentType) {}
 }
