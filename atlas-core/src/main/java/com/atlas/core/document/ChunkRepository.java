@@ -34,6 +34,12 @@ class ChunkRepository {
     jdbcTemplate.batchUpdate(sql, batchParams);
   }
 
+  /** Clears a document's chunks before a retry re-ingests it from scratch. */
+  void deleteByDocumentId(UUID documentId) {
+    String sql = "DELETE FROM chunk WHERE document_id = :documentId";
+    jdbcTemplate.update(sql, new MapSqlParameterSource().addValue("documentId", documentId));
+  }
+
   int countByDocumentId(UUID documentId) {
     String sql = "SELECT count(*) FROM chunk WHERE document_id = :documentId";
     Integer count =

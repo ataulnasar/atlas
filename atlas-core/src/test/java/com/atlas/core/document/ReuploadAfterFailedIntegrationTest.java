@@ -3,28 +3,30 @@ package com.atlas.core.document;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.UUID;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
@@ -35,14 +37,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Documents current behavior — not necessarily desired behavior — for re-uploading the exact same
- * bytes after the first attempt reaches FAILED. Duplicate detection keys on content_hash alone (see
- * {@code ux_document_content_hash} in V2__document_and_chunk_schema.sql), with no exemption for
- * FAILED rows, so today's answer is: it 409s against the failed row forever, with no way to retry
- * short of uploading different bytes. Whether failed documents should be re-ingestable is a product
- * decision this test surfaces rather than silently assumes.
+ * Verifies that re-uploading the exact same bytes after a document reaches FAILED retries it in
+ * place: same document id, chunks re-ingested from scratch, final status READY. The first attempt
+ * is failed via an injected one-shot transient read failure rather than genuinely corrupt content —
+ * the retry path re-ingests the SAME bytes, so a truly corrupt file would just fail identically on
+ * retry too.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(ReuploadAfterFailedIntegrationTest.FlakyStorageConfig.class)
 @Testcontainers
 class ReuploadAfterFailedIntegrationTest {
 
@@ -59,50 +61,39 @@ class ReuploadAfterFailedIntegrationTest {
   }
 
   @Autowired private TestRestTemplate restTemplate;
+  @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired private FlakyLocalFileStorageService flakyFileStorageService;
 
   @Test
-  void reuploadingTheSameBytesAfterFailedIsRejectedAsADuplicateOfTheFailedRow() throws IOException {
-    byte[] validPdf = buildPdf("this document will be truncated to corrupt the file bytes");
-    byte[] corrupt = new byte[validPdf.length / 2];
-    System.arraycopy(validPdf, 0, corrupt, 0, corrupt.length);
+  void reuploadingTheSameBytesAfterFailedRetriesInPlaceAndReachesReady() {
+    byte[] content =
+        "content whose first processing attempt fails transiently".getBytes(StandardCharsets.UTF_8);
 
+    flakyFileStorageService.failNextRead();
     ResponseEntity<DocumentUploadResponse> firstUpload =
-        uploadExpecting("corrupt-first.pdf", corrupt, DocumentUploadResponse.class);
+        uploadExpecting("first-attempt.txt", content, DocumentUploadResponse.class);
     assertThat(firstUpload.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-    UUID failedDocumentId = firstUpload.getBody().id();
-    awaitStatus(failedDocumentId, DocumentStatus.FAILED);
+    UUID documentId = firstUpload.getBody().id();
 
-    ResponseEntity<DuplicateDocumentError> retry =
-        uploadExpecting("corrupt-retry.pdf", corrupt, DuplicateDocumentError.class);
+    DocumentStatusResponse failed = awaitStatus(documentId, DocumentStatus.FAILED);
+    assertThat(failed.errorMessage()).isNotBlank();
+    assertThat(failed.chunkCount()).isZero();
 
-    assertThat(retry.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-    assertThat(retry.getBody()).isNotNull();
-    assertThat(retry.getBody().existingDocumentId()).isEqualTo(failedDocumentId);
+    ResponseEntity<DocumentUploadResponse> retryResponse =
+        uploadExpecting("retry-attempt.txt", content, DocumentUploadResponse.class);
 
-    // The failed row itself is untouched by the rejected retry.
-    DocumentStatusResponse stillFailed =
-        restTemplate.getForObject(
-            "/api/documents/" + failedDocumentId, DocumentStatusResponse.class);
-    assertThat(stillFailed.status()).isEqualTo(DocumentStatus.FAILED);
-  }
+    assertThat(retryResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    assertThat(retryResponse.getBody()).isNotNull();
+    assertThat(retryResponse.getBody().id()).isEqualTo(documentId);
 
-  private byte[] buildPdf(String... pageTexts) throws IOException {
-    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    try (PDDocument document = new PDDocument()) {
-      for (String pageText : pageTexts) {
-        PDPage page = new PDPage();
-        document.addPage(page);
-        try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-          contentStream.beginText();
-          contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-          contentStream.newLineAtOffset(50, 700);
-          contentStream.showText(pageText);
-          contentStream.endText();
-        }
-      }
-      document.save(buffer);
-    }
-    return buffer.toByteArray();
+    DocumentStatusResponse ready = awaitStatus(documentId, DocumentStatus.READY);
+    assertThat(ready.errorMessage()).isNull();
+    assertThat(ready.chunkCount()).isGreaterThan(0);
+
+    Integer chunkRows =
+        jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM chunk WHERE document_id = ?", Integer.class, documentId);
+    assertThat(chunkRows).isEqualTo(ready.chunkCount());
   }
 
   private <T> ResponseEntity<T> uploadExpecting(
@@ -115,7 +106,7 @@ class ReuploadAfterFailedIntegrationTest {
           }
         };
     HttpHeaders fileHeaders = new HttpHeaders();
-    fileHeaders.setContentType(MediaType.APPLICATION_PDF);
+    fileHeaders.setContentType(MediaType.TEXT_PLAIN);
 
     MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
     body.add("file", new HttpEntity<>(fileResource, fileHeaders));
@@ -136,5 +127,36 @@ class ReuploadAfterFailedIntegrationTest {
                 restTemplate.getForObject(
                     "/api/documents/" + documentId, DocumentStatusResponse.class),
             response -> response.status() == expected);
+  }
+
+  @TestConfiguration
+  static class FlakyStorageConfig {
+    @Bean
+    @Primary
+    FlakyLocalFileStorageService flakyLocalFileStorageService(StorageProperties storageProperties) {
+      return new FlakyLocalFileStorageService(storageProperties);
+    }
+  }
+
+  /** Fails exactly its next {@link #findStoredFile} call, then behaves normally again. */
+  static class FlakyLocalFileStorageService extends LocalFileStorageService {
+    private volatile boolean failNextRead;
+
+    FlakyLocalFileStorageService(StorageProperties storageProperties) {
+      super(storageProperties);
+    }
+
+    void failNextRead() {
+      this.failNextRead = true;
+    }
+
+    @Override
+    Optional<StoredFile> findStoredFile(UUID documentId) {
+      if (failNextRead) {
+        failNextRead = false;
+        throw new UncheckedIOException(new IOException("Simulated transient storage read failure"));
+      }
+      return super.findStoredFile(documentId);
+    }
   }
 }

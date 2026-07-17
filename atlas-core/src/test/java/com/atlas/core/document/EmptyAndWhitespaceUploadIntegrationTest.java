@@ -3,10 +3,14 @@ package com.atlas.core.document;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.UUID;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +34,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Documents current (not necessarily desired) behavior for degenerate TXT uploads. Neither the
- * upload path nor {@code ChunkingService} rejects blank content — a 0-byte file and a
- * whitespace-only file both pass validation, get parsed into a single empty/blank page, and {@code
- * ChunkingService#chunk} returns no candidates for blank {@code workingText}. Since {@code
- * IngestionProcessor} always calls {@code markReady} after a chunking pass that didn't throw, both
- * cases land on READY with zero chunks rather than being rejected outright or marked FAILED.
- * Whether "empty document" should instead be a rejection (400) is a product decision this test
- * surfaces rather than silently assumes.
+ * A 0-byte file, or blank text/plain content, is rejected up front with 400 before any row insert
+ * or file write. PDF/DOCX are deliberately NOT pre-validated for emptiness at upload time — that's
+ * left to the parser — but a document that parses successfully into zero chunks must still never
+ * reach READY: {@link IngestionProcessor} marks it FAILED instead.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -59,26 +59,64 @@ class EmptyAndWhitespaceUploadIntegrationTest {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Test
-  void zeroByteTxtUploadReachesReadyWithZeroChunks() {
-    UUID documentId = upload("empty.txt", new byte[0]);
+  void zeroByteTxtUploadIsRejectedBeforeAnyRowIsCreated() {
+    int documentsBefore = documentCount();
 
-    DocumentStatusResponse status = awaitStatus(documentId, DocumentStatus.READY);
+    ResponseEntity<ApiError> response =
+        uploadExpecting("empty.txt", MediaType.TEXT_PLAIN, new byte[0], ApiError.class);
 
-    assertThat(status.errorMessage()).isNull();
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().error()).isEqualTo("empty_document");
+    assertThat(documentCount()).isEqualTo(documentsBefore);
+  }
+
+  @Test
+  void whitespaceOnlyTxtUploadIsRejectedBeforeAnyRowIsCreated() {
+    byte[] content = "   \n\t\n   \n".getBytes(StandardCharsets.UTF_8);
+    int documentsBefore = documentCount();
+
+    ResponseEntity<ApiError> response =
+        uploadExpecting("whitespace.txt", MediaType.TEXT_PLAIN, content, ApiError.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().error()).isEqualTo("empty_document");
+    assertThat(documentCount()).isEqualTo(documentsBefore);
+  }
+
+  @Test
+  void aPdfThatParsesToNoTextLandsFailedRatherThanReady() throws IOException {
+    byte[] blankPagePdf = buildPdfWithBlankPage();
+
+    ResponseEntity<DocumentUploadResponse> uploadResponse =
+        uploadExpecting(
+            "blank-page.pdf",
+            MediaType.APPLICATION_PDF,
+            blankPagePdf,
+            DocumentUploadResponse.class);
+    assertThat(uploadResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    UUID documentId = uploadResponse.getBody().id();
+
+    DocumentStatusResponse status = awaitStatus(documentId, DocumentStatus.FAILED);
+
+    assertThat(status.errorMessage()).isEqualTo("document produced no content");
     assertThat(status.chunkCount()).isZero();
     assertThat(chunkRowCount(documentId)).isZero();
   }
 
-  @Test
-  void whitespaceOnlyTxtUploadReachesReadyWithZeroChunks() {
-    byte[] content = "   \n\t\n   \n".getBytes(StandardCharsets.UTF_8);
-    UUID documentId = upload("whitespace.txt", content);
+  private byte[] buildPdfWithBlankPage() throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    try (PDDocument document = new PDDocument()) {
+      document.addPage(new PDPage());
+      document.save(buffer);
+    }
+    return buffer.toByteArray();
+  }
 
-    DocumentStatusResponse status = awaitStatus(documentId, DocumentStatus.READY);
-
-    assertThat(status.errorMessage()).isNull();
-    assertThat(status.chunkCount()).isZero();
-    assertThat(chunkRowCount(documentId)).isZero();
+  private int documentCount() {
+    Integer count = jdbcTemplate.queryForObject("SELECT count(*) FROM document", Integer.class);
+    return count != null ? count : 0;
   }
 
   private int chunkRowCount(UUID documentId) {
@@ -88,7 +126,8 @@ class EmptyAndWhitespaceUploadIntegrationTest {
     return count != null ? count : 0;
   }
 
-  private UUID upload(String filename, byte[] content) {
+  private <T> ResponseEntity<T> uploadExpecting(
+      String filename, MediaType contentType, byte[] content, Class<T> responseType) {
     ByteArrayResource fileResource =
         new ByteArrayResource(content) {
           @Override
@@ -97,7 +136,7 @@ class EmptyAndWhitespaceUploadIntegrationTest {
           }
         };
     HttpHeaders fileHeaders = new HttpHeaders();
-    fileHeaders.setContentType(MediaType.TEXT_PLAIN);
+    fileHeaders.setContentType(contentType);
 
     MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
     body.add("file", new HttpEntity<>(fileResource, fileHeaders));
@@ -105,11 +144,8 @@ class EmptyAndWhitespaceUploadIntegrationTest {
     HttpHeaders requestHeaders = new HttpHeaders();
     requestHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-    ResponseEntity<DocumentUploadResponse> response =
-        restTemplate.postForEntity(
-            "/api/documents", new HttpEntity<>(body, requestHeaders), DocumentUploadResponse.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-    return response.getBody().id();
+    return restTemplate.postForEntity(
+        "/api/documents", new HttpEntity<>(body, requestHeaders), responseType);
   }
 
   private DocumentStatusResponse awaitStatus(UUID documentId, DocumentStatus expected) {
