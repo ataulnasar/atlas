@@ -17,18 +17,25 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * Smoke test for the default profile's logging pipeline: confirms the root console appender is
  * JSON-encoded (Logstash) and that a real log line, with a correlation ID in MDC, comes out as
  * valid, parseable JSON.
  */
-@SpringBootTest(
-    properties =
-        "spring.autoconfigure.exclude="
-            + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-            + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration")
+@SpringBootTest
+@Testcontainers
 class StructuredJsonLoggingSmokeTest {
+
+  @Container @ServiceConnection
+  static final PostgreSQLContainer<?> POSTGRES =
+      new PostgreSQLContainer<>(
+          DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));
 
   @Test
   void defaultProfileEmitsValidJsonLogLinesWithCorrelationId() throws Exception {

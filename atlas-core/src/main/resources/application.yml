@@ -5,9 +5,20 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/atlas}
     username: ${SPRING_DATASOURCE_USERNAME:atlas}
     password: ${SPRING_DATASOURCE_PASSWORD:atlas}
+  servlet:
+    multipart:
+      # Hard ceiling at the servlet layer; atlas.upload.max-file-size below is the
+      # actual business-rule limit, enforced in code so oversize uploads get a clean
+      # 413 response instead of a container-level error page.
+      max-file-size: 100MB
+      max-request-size: 100MB
 
 server:
   port: 8080
+
+atlas:
+  upload:
+    max-file-size: 25MB
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
