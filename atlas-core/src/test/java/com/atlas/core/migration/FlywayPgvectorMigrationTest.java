@@ -40,4 +40,30 @@ class FlywayPgvectorMigrationTest {
             "select count(*) from pg_extension where extname = 'vector'", Integer.class);
     assertThat(vectorExtensionCount).isEqualTo(1);
   }
+
+  @Test
+  void flywayAppliesV2AndCreatesDocumentAndChunkSchemaWithIndexes() {
+    Integer appliedV2Migrations =
+        jdbcTemplate.queryForObject(
+            "select count(*) from flyway_schema_history where version = '2' and success = true",
+            Integer.class);
+    assertThat(appliedV2Migrations).isEqualTo(1);
+
+    assertThat(jdbcTemplate.queryForObject("select to_regclass('document')", String.class))
+        .isEqualTo("document");
+    assertThat(jdbcTemplate.queryForObject("select to_regclass('chunk')", String.class))
+        .isEqualTo("chunk");
+
+    String hnswIndexDef =
+        jdbcTemplate.queryForObject(
+            "select indexdef from pg_indexes where indexname = 'idx_chunk_embedding_hnsw'",
+            String.class);
+    assertThat(hnswIndexDef).containsIgnoringCase("using hnsw");
+
+    String ginIndexDef =
+        jdbcTemplate.queryForObject(
+            "select indexdef from pg_indexes where indexname = 'idx_chunk_content_tsv_gin'",
+            String.class);
+    assertThat(ginIndexDef).containsIgnoringCase("using gin");
+  }
 }
