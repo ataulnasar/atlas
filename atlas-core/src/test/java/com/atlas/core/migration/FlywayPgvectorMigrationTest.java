@@ -66,4 +66,29 @@ class FlywayPgvectorMigrationTest {
             String.class);
     assertThat(ginIndexDef).containsIgnoringCase("using gin");
   }
+
+  @Test
+  void flywayAppliesV3AndAddsChunkPageProvenanceColumns() {
+    Integer appliedV3Migrations =
+        jdbcTemplate.queryForObject(
+            "select count(*) from flyway_schema_history where version = '3' and success = true",
+            Integer.class);
+    assertThat(appliedV3Migrations).isEqualTo(1);
+
+    Integer startPageNotNull =
+        jdbcTemplate.queryForObject(
+            "select count(*) from information_schema.columns "
+                + "where table_name = 'chunk' and column_name = 'start_page' "
+                + "and is_nullable = 'NO'",
+            Integer.class);
+    assertThat(startPageNotNull).isEqualTo(1);
+
+    Integer endPageNotNull =
+        jdbcTemplate.queryForObject(
+            "select count(*) from information_schema.columns "
+                + "where table_name = 'chunk' and column_name = 'end_page' "
+                + "and is_nullable = 'NO'",
+            Integer.class);
+    assertThat(endPageNotNull).isEqualTo(1);
+  }
 }
