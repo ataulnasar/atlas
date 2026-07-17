@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -25,6 +26,11 @@ class DocumentUploadService {
     this.fileStorageService = fileStorageService;
   }
 
+  // The insert and the file write must succeed or fail together: a storage failure after a
+  // successful insert would otherwise leave an orphaned PENDING row whose content_hash
+  // permanently blocks re-uploading the same content (the unique index would 409 it forever).
+  // An orphaned file left behind by a rolled-back insert is comparatively harmless.
+  @Transactional
   Document upload(MultipartFile file) {
     SupportedContentType contentType =
         SupportedContentType.fromMimeType(file.getContentType())
