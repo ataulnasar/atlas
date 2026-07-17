@@ -11,9 +11,10 @@ adr/            # Architecture Decision Records (numbered, immutable once accept
 
 ## Conventions
 
-- ADRs follow the standard format: Context, Decision, Consequences.
+- ADRs follow the standard format: Status, Context, Decision, Rationale, Consequences
+  (see `adr/0000-template.md`).
 - Name ADR files `NNNN-short-title.md` (e.g. `0001-vector-store-choice.md`).
 
 ## Status
 
-Scaffold only — first ADRs to be added as v1 design decisions are made.
+ADRs 0001–0007 cover the core v1 architecture decisions; see `adr/README.md` for the index.
