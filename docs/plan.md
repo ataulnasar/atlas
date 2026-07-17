@@ -353,7 +353,7 @@ Implement PDF parser for Atlas using Apache PDFBox or Tika. Extract text with pa
 **Priority:** High  
 **Labels:** docx,txt,ingestion
 
-**Description:** Use Apache POI/Tika for DOCX and simple reader for TXT.
+**Description:** **Note:** the TXT half was completed early, in the parser-abstraction card, as a trivial passthrough to make that abstraction testable end-to-end. This card is DOCX only. Use Apache POI/Tika for DOCX and simple reader for TXT.
 
 **Checklist:**
 - [ ] Read card context
