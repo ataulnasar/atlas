@@ -6,6 +6,8 @@ import com.atlas.core.ingestion.ChunkingService;
 import com.atlas.core.ingestion.DocumentParser;
 import com.atlas.core.ingestion.DocumentParserRegistry;
 import com.atlas.core.ingestion.ParsedDocument;
+import com.atlas.core.ingestion.TextCleanupService;
+import com.atlas.core.ingestion.TextCleanupService.CleanupResult;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ class IngestionProcessor {
   private final ChunkRepository chunkRepository;
   private final LocalFileStorageService fileStorageService;
   private final DocumentParserRegistry parserRegistry;
+  private final TextCleanupService textCleanupService;
   private final ChunkingService chunkingService;
 
   IngestionProcessor(
@@ -37,11 +40,13 @@ class IngestionProcessor {
       ChunkRepository chunkRepository,
       LocalFileStorageService fileStorageService,
       DocumentParserRegistry parserRegistry,
+      TextCleanupService textCleanupService,
       ChunkingService chunkingService) {
     this.documentRepository = documentRepository;
     this.chunkRepository = chunkRepository;
     this.fileStorageService = fileStorageService;
     this.parserRegistry = parserRegistry;
+    this.textCleanupService = textCleanupService;
     this.chunkingService = chunkingService;
   }
 
@@ -65,7 +70,16 @@ class IngestionProcessor {
                       new IllegalStateException("No stored file found for document " + documentId));
       DocumentParser parser = parserRegistry.resolve(storedFile.contentType());
       ParsedDocument parsed = parser.parse(storedFile.path());
-      List<ChunkCandidate> chunks = chunkingService.chunk(parsed);
+
+      CleanupResult cleanupResult = textCleanupService.clean(parsed);
+      if (cleanupResult.strippedLineCount() > 0) {
+        log.debug(
+            "Stripped {} noise line(s) from document {}",
+            cleanupResult.strippedLineCount(),
+            documentId);
+      }
+
+      List<ChunkCandidate> chunks = chunkingService.chunk(cleanupResult.document());
 
       // A zero-chunk document must never reach READY: there would be nothing for retrieval to
       // find, and a silent "successful" ingestion of no content is more misleading than a FAILED

@@ -59,3 +59,21 @@ ATLAS_BASE_URL=http://localhost:8080 ./corpus/ingest.sh
 `ATLAS_BASE_URL` (default `http://localhost:8080`) and an optional `ATLAS_API_KEY`, sent as
 the `X-API-Key` header — Atlas doesn't enforce API key auth yet (see docs/plan.md Phase 3),
 but the script is ready for when it does.
+
+## Page-footer noise
+
+A corpus spot check found that EUR-Lex's page footer gets extracted inline, mid-sentence, in
+just over half of all chunks — once in the old Official Journal pagination style, once in the
+newer ELI-reference style. Atlas core ships no corpus-specific cleanup by default (see
+`ParsingProperties`), so this repo's `docker/.env.example` carries the three
+`ATLAS_PARSING_STRIP_LINE_PATTERNS` regexes needed for this corpus, matched as a **full** line
+(a footer fragment that merely touches real content never strips that content):
+
+1. Old OJ-style footer, fields in any order — e.g. `4.5.2016 L 119/39 Official Journal of the
+   European Union EN`.
+2. New ELI-style footer, line 1 — e.g. `EN OJ L, 12.7.2024`.
+3. New ELI-style footer, line 2 — e.g. `46/144 ELI: http://data.europa.eu/eli/reg/2024/1689/oj`.
+
+Copy `docker/.env.example` to `docker/.env` (as the top-level docker README already instructs)
+to pick these up automatically before re-ingesting — `env_file: .env` passes every key in that
+file through to `atlas-core`, so no other wiring is needed.
