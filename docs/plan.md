@@ -1,6 +1,6 @@
 # Atlas v1 — Trello Backlog with AI Prompts (rev. 2)
 
-**Total estimated effort:** 236 hours
+**Total estimated effort:** 232 hours
 
 **Assumption:** Strong AI assistance using Claude Code/Cursor/ChatGPT for scaffolding, tests, migrations, docs, and review.
 
@@ -12,7 +12,7 @@
 
 - **Phase 0 — Foundation:** 23 hours
 - **Phase 1 — Ingestion:** 41 hours
-- **Phase 2 — Retrieval:** 44 hours
+- **Phase 2 — Retrieval:** 40 hours
 - **Phase 3 — Chat/RAG:** 40 hours
 - **Phase 4 — Python Evals:** 39 hours
 - **Phase 5 — FDE Demo:** 21 hours
@@ -517,7 +517,7 @@ Configure Spring AI embeddings for Atlas using OpenAI text-embedding-3-small as 
 **Priority:** High  
 **Labels:** pgvector,database
 
-**Description:** Create migration for vector column and HNSW index on chunks.
+**Description:** **Done early:** folded into the V2 schema migration (Phase 1, commit a1f662a) — vector(1536) column, HNSW index with vector_cosine_ops, and nullable embedding populated post-ingestion. Remaining from this card: none. Create migration for vector column and HNSW index on chunks.
 
 **Checklist:**
 - [ ] Read card context
