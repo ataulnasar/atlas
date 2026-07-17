@@ -21,8 +21,12 @@ class DocumentRepository {
               rs.getString("filename"),
               rs.getString("content_hash"),
               DocumentStatus.valueOf(rs.getString("status")),
+              rs.getString("error_message"),
               rs.getObject("created_at", OffsetDateTime.class),
               rs.getObject("updated_at", OffsetDateTime.class));
+
+  private static final String SELECT_COLUMNS =
+      "id, filename, content_hash, status, error_message, created_at, updated_at";
 
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -37,11 +41,10 @@ class DocumentRepository {
   @Transactional(propagation = Propagation.NESTED)
   Document insertPending(String filename, String contentHash) {
     String sql =
-        """
-        INSERT INTO document (filename, content_hash, status)
-        VALUES (:filename, :contentHash, 'PENDING')
-        RETURNING id, filename, content_hash, status, created_at, updated_at
-        """;
+        "INSERT INTO document (filename, content_hash, status) "
+            + "VALUES (:filename, :contentHash, 'PENDING') "
+            + "RETURNING "
+            + SELECT_COLUMNS;
     MapSqlParameterSource params =
         new MapSqlParameterSource()
             .addValue("filename", filename)
@@ -50,14 +53,43 @@ class DocumentRepository {
   }
 
   Optional<Document> findByContentHash(String contentHash) {
-    String sql =
-        """
-        SELECT id, filename, content_hash, status, created_at, updated_at
-        FROM document
-        WHERE content_hash = :contentHash
-        """;
+    String sql = "SELECT " + SELECT_COLUMNS + " FROM document WHERE content_hash = :contentHash";
     MapSqlParameterSource params = new MapSqlParameterSource().addValue("contentHash", contentHash);
     List<Document> results = jdbcTemplate.query(sql, params, ROW_MAPPER);
     return results.stream().findFirst();
+  }
+
+  Optional<Document> findById(UUID id) {
+    String sql = "SELECT " + SELECT_COLUMNS + " FROM document WHERE id = :id";
+    MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", id);
+    List<Document> results = jdbcTemplate.query(sql, params, ROW_MAPPER);
+    return results.stream().findFirst();
+  }
+
+  /**
+   * Atomically claims the document for processing: only succeeds if it's still PENDING. This is the
+   * guard against double-processing (e.g. a redelivered event) — returns {@code false} if another
+   * invocation already claimed it, or it was never PENDING.
+   */
+  boolean claimForProcessing(UUID id) {
+    String sql =
+        "UPDATE document SET status = 'PROCESSING', updated_at = now() "
+            + "WHERE id = :id AND status = 'PENDING'";
+    MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", id);
+    return jdbcTemplate.update(sql, params) == 1;
+  }
+
+  void markReady(UUID id) {
+    String sql = "UPDATE document SET status = 'READY', updated_at = now() WHERE id = :id";
+    jdbcTemplate.update(sql, new MapSqlParameterSource().addValue("id", id));
+  }
+
+  void markFailed(UUID id, String errorMessage) {
+    String sql =
+        "UPDATE document SET status = 'FAILED', error_message = :errorMessage, "
+            + "updated_at = now() WHERE id = :id";
+    MapSqlParameterSource params =
+        new MapSqlParameterSource().addValue("id", id).addValue("errorMessage", errorMessage);
+    jdbcTemplate.update(sql, params);
   }
 }

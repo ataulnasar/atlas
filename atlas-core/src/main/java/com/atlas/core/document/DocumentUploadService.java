@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,14 +17,17 @@ class DocumentUploadService {
   private final DocumentRepository documentRepository;
   private final UploadProperties uploadProperties;
   private final LocalFileStorageService fileStorageService;
+  private final ApplicationEventPublisher eventPublisher;
 
   DocumentUploadService(
       DocumentRepository documentRepository,
       UploadProperties uploadProperties,
-      LocalFileStorageService fileStorageService) {
+      LocalFileStorageService fileStorageService,
+      ApplicationEventPublisher eventPublisher) {
     this.documentRepository = documentRepository;
     this.uploadProperties = uploadProperties;
     this.fileStorageService = fileStorageService;
+    this.eventPublisher = eventPublisher;
   }
 
   // The insert and the file write must succeed or fail together: a storage failure after a
@@ -52,6 +56,11 @@ class DocumentUploadService {
     }
 
     fileStorageService.store(document.id(), contentType, file);
+
+    // Deferred to AFTER_COMMIT by IngestionProcessor's listener — publishing here (inside the
+    // transaction) is what makes that deferral possible, not a direct/@Async call from this
+    // method. See DocumentUploadedEvent.
+    eventPublisher.publishEvent(new DocumentUploadedEvent(document.id()));
 
     return document;
   }

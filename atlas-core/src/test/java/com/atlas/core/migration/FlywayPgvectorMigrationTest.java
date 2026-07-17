@@ -91,4 +91,29 @@ class FlywayPgvectorMigrationTest {
             Integer.class);
     assertThat(endPageNotNull).isEqualTo(1);
   }
+
+  @Test
+  void flywayAppliesV4AndAddsErrorMessageAndTokenCountColumns() {
+    Integer appliedV4Migrations =
+        jdbcTemplate.queryForObject(
+            "select count(*) from flyway_schema_history where version = '4' and success = true",
+            Integer.class);
+    assertThat(appliedV4Migrations).isEqualTo(1);
+
+    Integer errorMessageNullable =
+        jdbcTemplate.queryForObject(
+            "select count(*) from information_schema.columns "
+                + "where table_name = 'document' and column_name = 'error_message' "
+                + "and is_nullable = 'YES'",
+            Integer.class);
+    assertThat(errorMessageNullable).isEqualTo(1);
+
+    Integer tokenCountNotNull =
+        jdbcTemplate.queryForObject(
+            "select count(*) from information_schema.columns "
+                + "where table_name = 'chunk' and column_name = 'token_count' "
+                + "and is_nullable = 'NO'",
+            Integer.class);
+    assertThat(tokenCountNotNull).isEqualTo(1);
+  }
 }

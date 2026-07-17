@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,26 @@ class LocalFileStorageServiceTest {
 
     assertThat(firstPath.getFileName().toString()).isEqualTo("original.pdf");
     assertThat(secondPath.getFileName().toString()).isEqualTo("original.pdf");
+  }
+
+  @Test
+  void findsAPreviouslyStoredFileByItsContentType() throws IOException {
+    UUID documentId = UUID.randomUUID();
+    MockMultipartFile file =
+        new MockMultipartFile(
+            "file", "notes.txt", "text/plain", "notes".getBytes(StandardCharsets.UTF_8));
+    storageService.store(documentId, SupportedContentType.TXT, file);
+
+    Optional<LocalFileStorageService.StoredFile> found = storageService.findStoredFile(documentId);
+
+    assertThat(found).isPresent();
+    assertThat(found.get().contentType()).isEqualTo(SupportedContentType.TXT);
+    assertThat(found.get().path().getFileName().toString()).isEqualTo("original.txt");
+  }
+
+  @Test
+  void findingAnUnknownDocumentIdYieldsNothing() {
+    assertThat(storageService.findStoredFile(UUID.randomUUID())).isEmpty();
   }
 
   @Test

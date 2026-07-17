@@ -8,5 +8,6 @@ public record Document(
     String filename,
     String contentHash,
     DocumentStatus status,
+    String errorMessage,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt) {}

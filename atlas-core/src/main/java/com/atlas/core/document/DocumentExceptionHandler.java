@@ -36,4 +36,10 @@ class DocumentExceptionHandler {
             new DuplicateDocumentError(
                 "duplicate_document", e.getMessage(), e.existingDocumentId()));
   }
+
+  @ExceptionHandler(DocumentNotFoundException.class)
+  ResponseEntity<ApiError> handleNotFound(DocumentNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(new ApiError("document_not_found", e.getMessage()));
+  }
 }
