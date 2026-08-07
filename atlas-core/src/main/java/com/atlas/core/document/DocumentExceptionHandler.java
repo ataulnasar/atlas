@@ -50,6 +50,12 @@ class DocumentExceptionHandler {
         .body(new ApiError("document_not_found", e.getMessage()));
   }
 
+  @ExceptionHandler(ChunkNotFoundException.class)
+  ResponseEntity<ApiError> handleChunkNotFound(ChunkNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(new ApiError("chunk_not_found", e.getMessage()));
+  }
+
   // A body that can't be bound to the request record — most notably an unknown key inside the
   // strict SearchFilter (a typo'd filter field), but also malformed JSON or a bad UUID/type.
   @ExceptionHandler(HttpMessageNotReadableException.class)

@@ -4,6 +4,7 @@ import com.atlas.core.embedding.VectorLiteral;
 import com.atlas.core.ingestion.ChunkCandidate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -213,6 +214,33 @@ class ChunkRepository {
         jdbcTemplate.queryForObject(
             sql, new MapSqlParameterSource().addValue("documentId", documentId), Integer.class);
     return count != null ? count : 0;
+  }
+
+  private static final RowMapper<ChunkView> CHUNK_VIEW_MAPPER =
+      (rs, rowNum) ->
+          new ChunkView(
+              (UUID) rs.getObject("id"),
+              (UUID) rs.getObject("document_id"),
+              rs.getString("filename"),
+              // No title column in the document table (see V2 schema) — the filename is the title.
+              rs.getString("filename"),
+              rs.getInt("chunk_index"),
+              rs.getInt("start_page"),
+              rs.getInt("end_page"),
+              rs.getString("content"));
+
+  /**
+   * Full detail of a single chunk for the citation-drill-down endpoint; empty if the id is unknown.
+   */
+  Optional<ChunkView> findChunkView(UUID chunkId) {
+    String sql =
+        "SELECT c.id, c.document_id, d.filename, c.chunk_index, c.start_page, c.end_page, c.content "
+            + "FROM chunk c JOIN document d ON d.id = c.document_id "
+            + "WHERE c.id = :chunkId";
+    return jdbcTemplate
+        .query(sql, new MapSqlParameterSource().addValue("chunkId", chunkId), CHUNK_VIEW_MAPPER)
+        .stream()
+        .findFirst();
   }
 
   private MapSqlParameterSource toParams(UUID documentId, ChunkCandidate chunk) {
