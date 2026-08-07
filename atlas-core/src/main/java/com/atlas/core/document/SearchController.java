@@ -21,19 +21,22 @@ class SearchController {
 
   private final ObjectProvider<EmbeddingService> embeddingServiceProvider;
   private final VectorSearchService vectorSearchService;
+  private final KeywordSearchService keywordSearchService;
 
   SearchController(
       ObjectProvider<EmbeddingService> embeddingServiceProvider,
-      VectorSearchService vectorSearchService) {
+      VectorSearchService vectorSearchService,
+      KeywordSearchService keywordSearchService) {
     this.embeddingServiceProvider = embeddingServiceProvider;
     this.vectorSearchService = vectorSearchService;
+    this.keywordSearchService = keywordSearchService;
   }
 
   @PostMapping("/vector")
-  ResponseEntity<Object> vectorSearch(@RequestBody(required = false) VectorSearchRequest request) {
-    if (request == null || request.query() == null || request.query().isBlank()) {
-      return ResponseEntity.badRequest()
-          .body(new ApiError("invalid_query", "query must not be blank"));
+  ResponseEntity<Object> vectorSearch(@RequestBody(required = false) SearchRequest request) {
+    ResponseEntity<Object> invalid = validateQuery(request);
+    if (invalid != null) {
+      return invalid;
     }
 
     // Vector search needs the query embedded, so it's unavailable in keyless mode — same contract
@@ -48,9 +51,31 @@ class SearchController {
     }
 
     int topK = normalizeTopK(request.topK());
-    List<VectorSearchHit> hits =
+    List<SearchHit> hits =
         vectorSearchService.search(request.query().strip(), topK, embeddingService);
-    return ResponseEntity.ok(new VectorSearchResponse(hits));
+    return ResponseEntity.ok(new SearchResponse(hits));
+  }
+
+  @PostMapping("/keyword")
+  ResponseEntity<Object> keywordSearch(@RequestBody(required = false) SearchRequest request) {
+    ResponseEntity<Object> invalid = validateQuery(request);
+    if (invalid != null) {
+      return invalid;
+    }
+
+    // No embedding needed — keyword search is the degraded-mode search and works without a
+    // provider.
+    int topK = normalizeTopK(request.topK());
+    List<SearchHit> hits = keywordSearchService.search(request.query().strip(), topK);
+    return ResponseEntity.ok(new SearchResponse(hits));
+  }
+
+  private static ResponseEntity<Object> validateQuery(SearchRequest request) {
+    if (request == null || request.query() == null || request.query().isBlank()) {
+      return ResponseEntity.badRequest()
+          .body(new ApiError("invalid_query", "query must not be blank"));
+    }
+    return null;
   }
 
   private static int normalizeTopK(Integer requested) {

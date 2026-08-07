@@ -116,11 +116,41 @@ class KeylessEmbeddingIntegrationTest {
   void vectorSearchIsUnavailableWithoutAProvider() {
     ResponseEntity<ApiError> response =
         restTemplate.postForEntity(
-            "/api/search/vector", new VectorSearchRequest("anything", 10), ApiError.class);
+            "/api/search/vector", new SearchRequest("anything", 10), ApiError.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().error()).isEqualTo("embedding_disabled");
+  }
+
+  @Test
+  void keywordSearchWorksWithoutAProvider() {
+    // The degraded-mode search story: with no embedding provider, vector search is 503 (above) but
+    // keyword search over content_tsv still works. Seeded directly rather than uploaded so this
+    // doesn't consume the process-lifetime "embedding disabled" warn asserted by the test above.
+    UUID documentId =
+        jdbcTemplate.queryForObject(
+            "INSERT INTO document (filename, content_hash, status) "
+                + "VALUES (?, ?, 'READY') RETURNING id",
+            UUID.class,
+            "keyless-keyword.txt",
+            "hash-" + UUID.randomUUID());
+    jdbcTemplate.update(
+        "INSERT INTO chunk (document_id, chunk_index, content, start_page, end_page, token_count) "
+            + "VALUES (?, 0, ?, 1, 1, 10)",
+        documentId,
+        "The quarterly compliance report covers data retention.");
+
+    ResponseEntity<SearchResponse> response =
+        restTemplate.postForEntity(
+            "/api/search/keyword",
+            new SearchRequest("compliance report", 10),
+            SearchResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().results()).isNotEmpty();
+    assertThat(response.getBody().results().get(0).documentId()).isEqualTo(documentId);
   }
 
   private UUID upload(String filename, String content) {
