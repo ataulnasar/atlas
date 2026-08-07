@@ -59,6 +59,13 @@ atlas:
     # waiting the provider-suggested interval when it gives one, else rate-limit-backoff.
     rate-limit-backoff: 5s
     max-attempts-per-batch: 3
+  search:
+    hybrid:
+      # Per-source candidate pool fused by Reciprocal Rank Fusion — larger than topK so fusion has
+      # material to work with. See HybridSearchProperties.
+      candidate-pool: 50
+      # RRF constant k in score = sum 1/(k + rank); 60 is the canonical default.
+      rrf-k: 60
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.

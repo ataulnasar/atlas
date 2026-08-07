@@ -22,14 +22,17 @@ class SearchController {
   private final ObjectProvider<EmbeddingService> embeddingServiceProvider;
   private final VectorSearchService vectorSearchService;
   private final KeywordSearchService keywordSearchService;
+  private final HybridSearchService hybridSearchService;
 
   SearchController(
       ObjectProvider<EmbeddingService> embeddingServiceProvider,
       VectorSearchService vectorSearchService,
-      KeywordSearchService keywordSearchService) {
+      KeywordSearchService keywordSearchService,
+      HybridSearchService hybridSearchService) {
     this.embeddingServiceProvider = embeddingServiceProvider;
     this.vectorSearchService = vectorSearchService;
     this.keywordSearchService = keywordSearchService;
+    this.hybridSearchService = hybridSearchService;
   }
 
   @PostMapping("/vector")
@@ -68,6 +71,22 @@ class SearchController {
     int topK = normalizeTopK(request.topK());
     List<SearchHit> hits = keywordSearchService.search(request.query().strip(), topK);
     return ResponseEntity.ok(new SearchResponse(hits));
+  }
+
+  @PostMapping("/hybrid")
+  ResponseEntity<Object> hybridSearch(@RequestBody(required = false) SearchRequest request) {
+    ResponseEntity<Object> invalid = validateQuery(request);
+    if (invalid != null) {
+      return invalid;
+    }
+
+    // Never 503: hybrid is the endpoint a UI can always call. A missing provider degrades it to
+    // keyword-only inside the service rather than failing here.
+    EmbeddingService embeddingService = embeddingServiceProvider.getIfAvailable();
+    int topK = normalizeTopK(request.topK());
+    List<HybridSearchHit> hits =
+        hybridSearchService.search(request.query().strip(), topK, embeddingService);
+    return ResponseEntity.ok(new HybridSearchResponse(hits));
   }
 
   private static ResponseEntity<Object> validateQuery(SearchRequest request) {

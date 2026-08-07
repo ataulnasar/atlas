@@ -153,6 +153,66 @@ class KeylessEmbeddingIntegrationTest {
     assertThat(response.getBody().results().get(0).documentId()).isEqualTo(documentId);
   }
 
+  @Test
+  void hybridSearchDegradesToKeywordOnlyWithoutAProvider() {
+    // Hybrid must never 503 — with no provider it runs keyword-only, so a UI can always call it.
+    UUID documentId =
+        jdbcTemplate.queryForObject(
+            "INSERT INTO document (filename, content_hash, status) "
+                + "VALUES (?, ?, 'READY') RETURNING id",
+            UUID.class,
+            "keyless-hybrid.txt",
+            "hash-" + UUID.randomUUID());
+    jdbcTemplate.update(
+        "INSERT INTO chunk (document_id, chunk_index, content, start_page, end_page, token_count) "
+            + "VALUES (?, 0, ?, 1, 1, 10)",
+        documentId,
+        "Encryption standards and encryption key management for the platform.");
+
+    ResponseEntity<HybridSearchResponse> response =
+        restTemplate.postForEntity(
+            "/api/search/hybrid",
+            new SearchRequest("encryption standards", 10),
+            HybridSearchResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().results()).isNotEmpty();
+    HybridSearchHit top = response.getBody().results().get(0);
+    assertThat(top.documentId()).isEqualTo(documentId);
+    // Keyless => keyword-only: found by keyword, with no vector rank.
+    assertThat(top.foundBy()).isEqualTo("keyword");
+    assertThat(top.vectorRank()).isNull();
+    assertThat(top.keywordRank()).isEqualTo(1);
+    assertThat(top.score()).isGreaterThan(0.0);
+  }
+
+  @Test
+  void hybridSearchTopKIsCappedAtFiftyWithoutAProvider() {
+    UUID documentId =
+        jdbcTemplate.queryForObject(
+            "INSERT INTO document (filename, content_hash, status) "
+                + "VALUES (?, ?, 'READY') RETURNING id",
+            UUID.class,
+            "keyless-hybrid-cap.txt",
+            "hash-" + UUID.randomUUID());
+    for (int i = 0; i < 51; i++) {
+      jdbcTemplate.update(
+          "INSERT INTO chunk (document_id, chunk_index, content, start_page, end_page, token_count) "
+              + "VALUES (?, ?, ?, 1, 1, 10)",
+          documentId,
+          i,
+          "Row " + i + " mentions oversight and oversight duties.");
+    }
+
+    ResponseEntity<HybridSearchResponse> response =
+        restTemplate.postForEntity(
+            "/api/search/hybrid", new SearchRequest("oversight", 1000), HybridSearchResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().results()).hasSize(50);
+  }
+
   private UUID upload(String filename, String content) {
     ByteArrayResource fileResource =
         new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8)) {
