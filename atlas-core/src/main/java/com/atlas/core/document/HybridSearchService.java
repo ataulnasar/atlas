@@ -145,7 +145,9 @@ class HybridSearchService {
       if (results.size() == topK) {
         break;
       }
-      results.add(toHybridHit(candidate));
+      // citationId is assigned by final fused rank (c1, c2, …) — the legs' own citationIds are
+      // discarded, since this response's ordering is what a caller cites against.
+      results.add(toHybridHit(candidate, results.size() + 1));
     }
     return results;
   }
@@ -158,7 +160,7 @@ class HybridSearchService {
     return ranks;
   }
 
-  private static HybridSearchHit toHybridHit(FusedCandidate candidate) {
+  private static HybridSearchHit toHybridHit(FusedCandidate candidate, int rank) {
     SearchHit hit = candidate.hit();
     String foundBy;
     if (candidate.vectorRank() != null && candidate.keywordRank() != null) {
@@ -169,15 +171,21 @@ class HybridSearchService {
       foundBy = FOUND_BY_KEYWORD;
     }
     double score = Math.round(candidate.score() * SCORE_ROUNDING) / SCORE_ROUNDING;
+    Citation source = hit.citation();
+    Citation citation =
+        new Citation(
+            "c" + rank,
+            source.chunkId(),
+            source.documentId(),
+            source.documentFilename(),
+            source.documentTitle(),
+            source.startPage(),
+            source.endPage(),
+            source.snippet());
     return new HybridSearchHit(
-        hit.chunkId(),
-        hit.documentId(),
-        hit.documentFilename(),
+        citation,
         hit.chunkIndex(),
-        hit.startPage(),
-        hit.endPage(),
         score,
-        hit.snippet(),
         foundBy,
         candidate.vectorRank(),
         candidate.keywordRank());

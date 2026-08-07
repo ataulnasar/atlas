@@ -80,6 +80,9 @@ class HybridSearchServiceTest {
   }
 
   private static SearchHit hit(UUID chunkId) {
-    return new SearchHit(chunkId, UUID.randomUUID(), "doc.txt", 0, 1, 1, 0.0, "snippet");
+    // Leg citationId is irrelevant to fusion (fuse re-assigns c1..cN by fused rank).
+    Citation citation =
+        new Citation("c0", chunkId, UUID.randomUUID(), "doc.txt", "doc.txt", 1, 1, "snippet");
+    return new SearchHit(citation, 0, 0.0);
   }
 }
