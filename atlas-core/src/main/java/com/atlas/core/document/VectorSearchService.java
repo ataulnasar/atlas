@@ -24,19 +24,21 @@ class VectorSearchService {
     this.chunkRepository = chunkRepository;
   }
 
-  List<SearchHit> search(String query, int topK, EmbeddingService embeddingService) {
+  List<SearchHit> search(
+      String query, int topK, SearchFilter filter, EmbeddingService embeddingService) {
     long startNanos = System.nanoTime();
 
     float[] queryVector = embeddingService.embed(List.of(query)).get(0);
-    List<RankedChunkRow> rows = chunkRepository.searchByVector(queryVector, topK);
+    List<RankedChunkRow> rows = chunkRepository.searchByVector(queryVector, topK, filter);
     List<SearchHit> hits = SearchResultMapper.toHits(rows);
 
     long tookMillis = (System.nanoTime() - startNanos) / 1_000_000;
     // Log the query text, topK and timing — never the embedding vectors.
     log.info(
-        "Vector search query=\"{}\" topK={} hits={} took {} ms",
+        "Vector search query=\"{}\" topK={} filtered={} hits={} took {} ms",
         query,
         topK,
+        !filter.isEmpty(),
         hits.size(),
         tookMillis);
     return hits;

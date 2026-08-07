@@ -54,8 +54,9 @@ class SearchController {
     }
 
     int topK = normalizeTopK(request.topK());
+    SearchFilter filter = SearchFilter.orNone(request.filter());
     List<SearchHit> hits =
-        vectorSearchService.search(request.query().strip(), topK, embeddingService);
+        vectorSearchService.search(request.query().strip(), topK, filter, embeddingService);
     return ResponseEntity.ok(new SearchResponse(hits));
   }
 
@@ -69,7 +70,8 @@ class SearchController {
     // No embedding needed — keyword search is the degraded-mode search and works without a
     // provider.
     int topK = normalizeTopK(request.topK());
-    List<SearchHit> hits = keywordSearchService.search(request.query().strip(), topK);
+    SearchFilter filter = SearchFilter.orNone(request.filter());
+    List<SearchHit> hits = keywordSearchService.search(request.query().strip(), topK, filter);
     return ResponseEntity.ok(new SearchResponse(hits));
   }
 
@@ -84,8 +86,9 @@ class SearchController {
     // keyword-only inside the service rather than failing here.
     EmbeddingService embeddingService = embeddingServiceProvider.getIfAvailable();
     int topK = normalizeTopK(request.topK());
+    SearchFilter filter = SearchFilter.orNone(request.filter());
     List<HybridSearchHit> hits =
-        hybridSearchService.search(request.query().strip(), topK, embeddingService);
+        hybridSearchService.search(request.query().strip(), topK, filter, embeddingService);
     return ResponseEntity.ok(new HybridSearchResponse(hits));
   }
 
