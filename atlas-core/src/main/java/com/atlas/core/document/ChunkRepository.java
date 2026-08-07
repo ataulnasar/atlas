@@ -1,5 +1,6 @@
 package com.atlas.core.document;
 
+import com.atlas.core.embedding.VectorLiteral;
 import com.atlas.core.ingestion.ChunkCandidate;
 import java.util.List;
 import java.util.UUID;
@@ -104,23 +105,54 @@ class ChunkRepository {
       batchParams[i] =
           new MapSqlParameterSource()
               .addValue("id", chunkIds.get(i))
-              .addValue("embedding", toVectorLiteral(vectors.get(i)));
+              .addValue("embedding", VectorLiteral.format(vectors.get(i)));
     }
     jdbcTemplate.batchUpdate(sql, batchParams);
   }
 
-  // pgvector accepts a bracketed, comma-separated text literal, e.g. "[0.1,0.2,0.3]".
-  private static String toVectorLiteral(float[] vector) {
-    StringBuilder builder = new StringBuilder(vector.length * 12 + 2);
-    builder.append('[');
-    for (int i = 0; i < vector.length; i++) {
-      if (i > 0) {
-        builder.append(',');
-      }
-      builder.append(vector[i]);
-    }
-    builder.append(']');
-    return builder.toString();
+  /**
+   * One ranked hit from a vector search: chunk + its document's filename + the similarity score.
+   */
+  record VectorSearchRow(
+      UUID chunkId,
+      UUID documentId,
+      String documentFilename,
+      int chunkIndex,
+      int startPage,
+      int endPage,
+      String content,
+      double similarity) {}
+
+  private static final RowMapper<VectorSearchRow> VECTOR_SEARCH_ROW_MAPPER =
+      (rs, rowNum) ->
+          new VectorSearchRow(
+              (UUID) rs.getObject("id"),
+              (UUID) rs.getObject("document_id"),
+              rs.getString("filename"),
+              rs.getInt("chunk_index"),
+              rs.getInt("start_page"),
+              rs.getInt("end_page"),
+              rs.getString("content"),
+              rs.getDouble("similarity"));
+
+  /**
+   * Ranks the {@code topK} chunks most similar to {@code queryVector} by cosine distance ({@code
+   * <=>}), reporting similarity as {@code 1 - distance}. NULL-embedding chunks are excluded (they
+   * aren't searchable), and every hit carries its document's filename for citation.
+   */
+  List<VectorSearchRow> searchByVector(float[] queryVector, int topK) {
+    String sql =
+        "SELECT c.id, c.document_id, d.filename, c.chunk_index, c.start_page, c.end_page, "
+            + "c.content, 1 - (c.embedding <=> CAST(:queryVector AS vector)) AS similarity "
+            + "FROM chunk c JOIN document d ON d.id = c.document_id "
+            + "WHERE c.embedding IS NOT NULL "
+            + "ORDER BY c.embedding <=> CAST(:queryVector AS vector) "
+            + "LIMIT :topK";
+    MapSqlParameterSource params =
+        new MapSqlParameterSource()
+            .addValue("queryVector", VectorLiteral.format(queryVector))
+            .addValue("topK", topK);
+    return jdbcTemplate.query(sql, params, VECTOR_SEARCH_ROW_MAPPER);
   }
 
   int countByDocumentId(UUID documentId) {

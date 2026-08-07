@@ -44,10 +44,15 @@ public class FakeEmbeddingService implements EmbeddingService {
       throw new EmbeddingException(
           "simulated embedding failure", new RuntimeException("fake provider is down"));
     }
-    return texts.stream().map(FakeEmbeddingService::deterministicVector).toList();
+    return texts.stream().map(FakeEmbeddingService::vectorFor).toList();
   }
 
-  private static float[] deterministicVector(String text) {
+  /**
+   * The exact vector this fake produces for {@code text}. Exposed so a test can seed a chunk's
+   * stored embedding to match (or deliberately differ from) what a query for {@code text} embeds
+   * to, making similarity ordering deterministic.
+   */
+  public static float[] vectorFor(String text) {
     Random random = new Random(text.hashCode());
     float[] vector = new float[DIMENSIONS];
     for (int i = 0; i < DIMENSIONS; i++) {
