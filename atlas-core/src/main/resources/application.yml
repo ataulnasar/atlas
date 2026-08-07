@@ -1,6 +1,13 @@
 spring:
   application:
     name: atlas-core
+  jackson:
+    deserialization:
+      # Reject request bodies with unknown fields (Spring Boot disables this by default). A typo'd
+      # key — e.g. an unknown field inside a search `filter` — fails loudly with a 400 rather than
+      # being silently ignored (which for a filter would quietly widen the search to the whole
+      # corpus). Handled by DocumentExceptionHandler → 400 "invalid_request".
+      fail-on-unknown-properties: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/atlas}
     username: ${SPRING_DATASOURCE_USERNAME:atlas}

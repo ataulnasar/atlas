@@ -22,17 +22,18 @@ class KeywordSearchService {
     this.chunkRepository = chunkRepository;
   }
 
-  List<SearchHit> search(String query, int topK) {
+  List<SearchHit> search(String query, int topK, SearchFilter filter) {
     long startNanos = System.nanoTime();
 
-    List<RankedChunkRow> rows = chunkRepository.searchByKeyword(query, topK);
+    List<RankedChunkRow> rows = chunkRepository.searchByKeyword(query, topK, filter);
     List<SearchHit> hits = SearchResultMapper.toHits(rows);
 
     long tookMillis = (System.nanoTime() - startNanos) / 1_000_000;
     log.info(
-        "Keyword search query=\"{}\" topK={} hits={} took {} ms",
+        "Keyword search query=\"{}\" topK={} filtered={} hits={} took {} ms",
         query,
         topK,
+        !filter.isEmpty(),
         hits.size(),
         tookMillis);
     return hits;

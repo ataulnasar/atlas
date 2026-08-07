@@ -1,7 +1,9 @@
 package com.atlas.core.document;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -46,5 +48,16 @@ class DocumentExceptionHandler {
   ResponseEntity<ApiError> handleNotFound(DocumentNotFoundException e) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(new ApiError("document_not_found", e.getMessage()));
+  }
+
+  // A body that can't be bound to the request record — most notably an unknown key inside the
+  // strict SearchFilter (a typo'd filter field), but also malformed JSON or a bad UUID/type.
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException e) {
+    String message = "Request body is malformed";
+    if (e.getCause() instanceof UnrecognizedPropertyException unrecognized) {
+      message = "Unknown field '" + unrecognized.getPropertyName() + "' in request body";
+    }
+    return ResponseEntity.badRequest().body(new ApiError("invalid_request", message));
   }
 }

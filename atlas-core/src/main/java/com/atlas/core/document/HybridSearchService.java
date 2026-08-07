@@ -61,7 +61,8 @@ class HybridSearchService {
    * fuses them with RRF, and returns the topK fused hits. {@code embeddingService} may be null —
    * keyless mode — in which case only keyword search runs.
    */
-  List<HybridSearchHit> search(String query, int topK, EmbeddingService embeddingService) {
+  List<HybridSearchHit> search(
+      String query, int topK, SearchFilter filter, EmbeddingService embeddingService) {
     long startNanos = System.nanoTime();
     int poolSize = Math.max(candidatePool, topK);
 
@@ -70,16 +71,18 @@ class HybridSearchService {
     if (embeddingService == null) {
       logKeylessDegradeOnce();
       vectorHits = List.of();
-      keywordHits = keywordSearchService.search(query, poolSize);
+      keywordHits = keywordSearchService.search(query, poolSize, filter);
     } else {
       // Independent searches — run them concurrently so vector's embedding round-trip and keyword's
-      // FTS query overlap instead of summing their latencies.
+      // FTS query overlap instead of summing their latencies. The same filter applies to both legs
+      // so fusion only ever sees candidates from the filtered documents.
       CompletableFuture<List<SearchHit>> vectorFuture =
           CompletableFuture.supplyAsync(
-              () -> vectorSearchService.search(query, poolSize, embeddingService), executor);
+              () -> vectorSearchService.search(query, poolSize, filter, embeddingService),
+              executor);
       CompletableFuture<List<SearchHit>> keywordFuture =
           CompletableFuture.supplyAsync(
-              () -> keywordSearchService.search(query, poolSize), executor);
+              () -> keywordSearchService.search(query, poolSize, filter), executor);
       vectorHits = join(vectorFuture);
       keywordHits = join(keywordFuture);
     }
@@ -88,9 +91,10 @@ class HybridSearchService {
 
     long tookMillis = (System.nanoTime() - startNanos) / 1_000_000;
     log.info(
-        "Hybrid search query=\"{}\" topK={} vectorCandidates={} keywordCandidates={} fused={} took {} ms",
+        "Hybrid search query=\"{}\" topK={} filtered={} vectorCandidates={} keywordCandidates={} fused={} took {} ms",
         query,
         topK,
+        !filter.isEmpty(),
         vectorHits.size(),
         keywordHits.size(),
         fused.size(),
