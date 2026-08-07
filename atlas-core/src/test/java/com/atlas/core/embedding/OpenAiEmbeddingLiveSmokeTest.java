@@ -26,7 +26,9 @@ class OpenAiEmbeddingLiveSmokeTest {
 
     new ApplicationContextRunner()
         .withUserConfiguration(EmbeddingConfig.class)
-        .withBean(EmbeddingProperties.class, () -> new EmbeddingProperties(100))
+        .withBean(
+            EmbeddingProperties.class,
+            () -> new EmbeddingProperties(100, java.time.Duration.ofSeconds(5), 3))
         .withPropertyValues(
             "spring.ai.openai.api-key=" + apiKey,
             "spring.ai.openai.embedding.options.model=text-embedding-3-small")

@@ -55,6 +55,10 @@ atlas:
   embedding:
     # Conservative relative to OpenAI's 2048-inputs-per-call limit — see EmbeddingProperties.
     batch-size: 100
+    # On a provider rate limit (HTTP 429), retry a batch up to max-attempts-per-batch times,
+    # waiting the provider-suggested interval when it gives one, else rate-limit-backoff.
+    rate-limit-backoff: 5s
+    max-attempts-per-batch: 3
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
