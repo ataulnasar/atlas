@@ -12,6 +12,27 @@ spring:
       # 413 response instead of a container-level error page.
       max-file-size: 100MB
       max-request-size: 100MB
+  ai:
+    openai:
+      # Strictly from the environment — never a real value in this file or anywhere else in
+      # the repo. Empty is fine at context-startup time (see EmbeddingConfig); only an actual
+      # embed() call needs a real key.
+      api-key: ${SPRING_AI_OPENAI_API_KEY:}
+      embedding:
+        options:
+          model: text-embedding-3-small
+  autoconfigure:
+    exclude:
+      # EmbeddingConfig builds the OpenAI embedding beans by hand instead (see its javadoc for
+      # why); these auto-configurations would otherwise construct their own OpenAI-backed model
+      # beans and fail application startup when no API key is configured. Only embedding is used
+      # today — the other model types are excluded outright rather than left half-wired.
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
 
 server:
   port: 8080
@@ -31,8 +52,11 @@ atlas:
     # Empty by default — Atlas core is corpus-agnostic; a deployment supplies its own
     # patterns here or via ATLAS_PARSING_STRIP_LINE_PATTERNS. See ParsingProperties.
     strip-line-patterns: ${ATLAS_PARSING_STRIP_LINE_PATTERNS:}
+  embedding:
+    # Conservative relative to OpenAI's 2048-inputs-per-call limit — see EmbeddingProperties.
+    batch-size: 100
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
 
-# TODO(v1): embedding provider and LLM provider config
+# TODO(v1): LLM (chat/generation) provider config
