@@ -65,9 +65,9 @@ class VectorSearchIntegrationTest {
       seedEmbeddedChunk(documentId, i, "topic-" + i + " body text", "topic-" + i + " body text");
     }
 
-    VectorSearchResponse body = search("topic-2 body text", 5);
+    SearchResponse body = search("topic-2 body text", 5);
 
-    List<VectorSearchHit> results = body.results();
+    List<SearchHit> results = body.results();
     assertThat(results).hasSize(5);
     // The chunk whose stored embedding equals the query's embedding is the top hit at score ~1.0.
     assertThat(results.get(0).snippet()).contains("topic-2");
@@ -111,9 +111,9 @@ class VectorSearchIntegrationTest {
     UUID nullChunk1 = seedNullEmbeddingChunk(documentId, 2, "gamma");
     UUID nullChunk2 = seedNullEmbeddingChunk(documentId, 3, "delta");
 
-    VectorSearchResponse body = search("alpha", 100);
+    SearchResponse body = search("alpha", 100);
 
-    List<UUID> returnedIds = body.results().stream().map(VectorSearchHit::chunkId).toList();
+    List<UUID> returnedIds = body.results().stream().map(SearchHit::chunkId).toList();
     assertThat(returnedIds).containsExactlyInAnyOrder(embeddedA, embeddedB);
     assertThat(returnedIds).doesNotContain(nullChunk1, nullChunk2);
   }
@@ -124,16 +124,16 @@ class VectorSearchIntegrationTest {
     String longContent = "X".repeat(1000);
     seedEmbeddedChunk(documentId, 0, longContent, "the-only-topic");
 
-    List<VectorSearchHit> results = search("the-only-topic", 10).results();
+    List<SearchHit> results = search("the-only-topic", 10).results();
 
     assertThat(results).hasSize(1);
     assertThat(results.get(0).snippet()).hasSize(300).isEqualTo("X".repeat(300));
   }
 
-  private VectorSearchResponse search(String query, int topK) {
-    ResponseEntity<VectorSearchResponse> response =
+  private SearchResponse search(String query, int topK) {
+    ResponseEntity<SearchResponse> response =
         restTemplate.postForEntity(
-            "/api/search/vector", new VectorSearchRequest(query, topK), VectorSearchResponse.class);
+            "/api/search/vector", new SearchRequest(query, topK), SearchResponse.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     return response.getBody();

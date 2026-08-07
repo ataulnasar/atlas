@@ -111,9 +111,11 @@ class ChunkRepository {
   }
 
   /**
-   * One ranked hit from a vector search: chunk + its document's filename + the similarity score.
+   * One ranked hit from a search: chunk + its document's filename + the ranker's {@code score}
+   * (cosine similarity for vector search, {@code ts_rank_cd} for keyword search). Shared shape so
+   * both searches feed the same result mapper.
    */
-  record VectorSearchRow(
+  record RankedChunkRow(
       UUID chunkId,
       UUID documentId,
       String documentFilename,
@@ -121,11 +123,11 @@ class ChunkRepository {
       int startPage,
       int endPage,
       String content,
-      double similarity) {}
+      double score) {}
 
-  private static final RowMapper<VectorSearchRow> VECTOR_SEARCH_ROW_MAPPER =
+  private static final RowMapper<RankedChunkRow> RANKED_CHUNK_ROW_MAPPER =
       (rs, rowNum) ->
-          new VectorSearchRow(
+          new RankedChunkRow(
               (UUID) rs.getObject("id"),
               (UUID) rs.getObject("document_id"),
               rs.getString("filename"),
@@ -133,17 +135,17 @@ class ChunkRepository {
               rs.getInt("start_page"),
               rs.getInt("end_page"),
               rs.getString("content"),
-              rs.getDouble("similarity"));
+              rs.getDouble("score"));
 
   /**
    * Ranks the {@code topK} chunks most similar to {@code queryVector} by cosine distance ({@code
    * <=>}), reporting similarity as {@code 1 - distance}. NULL-embedding chunks are excluded (they
    * aren't searchable), and every hit carries its document's filename for citation.
    */
-  List<VectorSearchRow> searchByVector(float[] queryVector, int topK) {
+  List<RankedChunkRow> searchByVector(float[] queryVector, int topK) {
     String sql =
         "SELECT c.id, c.document_id, d.filename, c.chunk_index, c.start_page, c.end_page, "
-            + "c.content, 1 - (c.embedding <=> CAST(:queryVector AS vector)) AS similarity "
+            + "c.content, 1 - (c.embedding <=> CAST(:queryVector AS vector)) AS score "
             + "FROM chunk c JOIN document d ON d.id = c.document_id "
             + "WHERE c.embedding IS NOT NULL "
             + "ORDER BY c.embedding <=> CAST(:queryVector AS vector) "
@@ -152,7 +154,30 @@ class ChunkRepository {
         new MapSqlParameterSource()
             .addValue("queryVector", VectorLiteral.format(queryVector))
             .addValue("topK", topK);
-    return jdbcTemplate.query(sql, params, VECTOR_SEARCH_ROW_MAPPER);
+    return jdbcTemplate.query(sql, params, RANKED_CHUNK_ROW_MAPPER);
+  }
+
+  /**
+   * Ranks the {@code topK} chunks matching {@code query} by full-text relevance. The query is
+   * parsed with {@code websearch_to_tsquery}, which treats a natural-language string gracefully
+   * (bare words are AND-ed, quotes are phrases, stopwords drop out) rather than erroring; a query
+   * that reduces to an empty tsquery — e.g. only stopwords — simply matches nothing. Scoring is
+   * {@code ts_rank_cd} against the generated {@code content_tsv} column (backed by its GIN index).
+   * No embedding needed, so this works in keyless mode.
+   */
+  List<RankedChunkRow> searchByKeyword(String query, int topK) {
+    String sql =
+        "SELECT c.id, c.document_id, d.filename, c.chunk_index, c.start_page, c.end_page, "
+            + "c.content, ts_rank_cd(c.content_tsv, q.query) AS score "
+            + "FROM chunk c "
+            + "JOIN document d ON d.id = c.document_id "
+            + "CROSS JOIN websearch_to_tsquery('english', :query) AS q(query) "
+            + "WHERE c.content_tsv @@ q.query "
+            + "ORDER BY score DESC "
+            + "LIMIT :topK";
+    MapSqlParameterSource params =
+        new MapSqlParameterSource().addValue("query", query).addValue("topK", topK);
+    return jdbcTemplate.query(sql, params, RANKED_CHUNK_ROW_MAPPER);
   }
 
   int countByDocumentId(UUID documentId) {
