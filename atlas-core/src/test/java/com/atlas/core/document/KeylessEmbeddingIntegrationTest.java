@@ -112,6 +112,17 @@ class KeylessEmbeddingIntegrationTest {
     assertThat(response.getBody().error()).isEqualTo("embedding_disabled");
   }
 
+  @Test
+  void vectorSearchIsUnavailableWithoutAProvider() {
+    ResponseEntity<ApiError> response =
+        restTemplate.postForEntity(
+            "/api/search/vector", new VectorSearchRequest("anything", 10), ApiError.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().error()).isEqualTo("embedding_disabled");
+  }
+
   private UUID upload(String filename, String content) {
     ByteArrayResource fileResource =
         new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8)) {
