@@ -1008,6 +1008,8 @@ Create Python 3.12 package atlas-evals using uv. Add ruff, pytest, typer, mypy (
 
 **Description:** YAML/JSON format: question, expected answer, expected sources.
 
+**Requirement from Phase 2:** metrics must include page-level matching (top-K chunk page ranges intersecting expected_pages), not just document-level hit@K — document-level scoring cannot detect known chunk-level regressions like the ai-act idx-138 distractor tracked by mg-06.
+
 **Checklist:**
 - [ ] Read card context
 - [ ] Use AI prompt
