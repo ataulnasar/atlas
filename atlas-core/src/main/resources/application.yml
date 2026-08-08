@@ -73,8 +73,16 @@ atlas:
       candidate-pool: 50
       # RRF constant k in score = sum 1/(k + rank); 60 is the canonical default.
       rrf-k: 60
+  generation:
+    # OpenAI chat model for grounded answering — the current balanced cheap/good tier, and a value
+    # Spring AI 1.1.8 recognises (OpenAiApi.ChatModel.GPT_5_MINI). See GenerationProperties.
+    model: gpt-5-mini
+    # Low temperature: grounded, cite-only answering wants determinism, not creativity.
+    temperature: 0.1
+    # Max source tokens context assembly may spend; lower-ranked chunks that don't fit are dropped.
+    context-budget: 6000
+    # Prior Q&A pairs replayed verbatim into the prompt.
+    history-turns: 3
 
 # Logging is JSON by default (see logback-spring.xml); activate the "local" profile
 # (--spring.profiles.active=local) for human-readable console output.
-
-# TODO(v1): LLM (chat/generation) provider config
