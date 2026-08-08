@@ -28,4 +28,23 @@ public record Citation(
     String documentTitle,
     int startPage,
     int endPage,
-    String snippet) {}
+    String snippet) {
+
+  /**
+   * A copy of this citation carrying a different {@code citationId}. Labels are response-scoped and
+   * get (re)assigned as sources are selected — context assembly labels the offered set c1..cN, and
+   * citation extraction renumbers the cited subset c1..cM — so the same source data is relabelled
+   * rather than rebuilt field-by-field.
+   */
+  public Citation withCitationId(String newCitationId) {
+    return new Citation(
+        newCitationId,
+        chunkId,
+        documentId,
+        documentFilename,
+        documentTitle,
+        startPage,
+        endPage,
+        snippet);
+  }
+}
