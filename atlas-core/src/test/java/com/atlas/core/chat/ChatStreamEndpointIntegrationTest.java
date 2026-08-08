@@ -126,13 +126,18 @@ class ChatStreamEndpointIntegrationTest {
     assertThat(citations.get(0).chunkId()).isEqualTo(chunkB);
     assertThat(citations.get(1).chunkId()).isEqualTo(chunkA);
 
-    // The done event carries usage + conversationId + retrievalMode.
+    // The done event carries usage + conversationId + retrievalMode. Usage propagation is the
+    // token-count contract the streaming UI reads: the full ChatUsage the generator reported must
+    // survive to the done payload (regression guard for the "0 tokens" streaming bug).
     JsonNode doneEvent = readJson(dataOf(events, "done"));
     UUID conversationId = UUID.fromString(doneEvent.get("conversationId").asText());
     assertThat(doneEvent.get("retrievalMode").asText()).isEqualTo("hybrid");
-    assertThat(doneEvent.get("usage").get("totalTokens").asInt())
-        .isEqualTo(FakeChatGenerator.TOTAL_TOKENS);
-    assertThat(doneEvent.get("usage").get("model").asText()).isEqualTo(FakeChatGenerator.MODEL);
+    JsonNode usage = doneEvent.get("usage");
+    assertThat(usage.get("promptTokens").asInt()).isEqualTo(FakeChatGenerator.PROMPT_TOKENS);
+    assertThat(usage.get("completionTokens").asInt())
+        .isEqualTo(FakeChatGenerator.COMPLETION_TOKENS);
+    assertThat(usage.get("totalTokens").asInt()).isEqualTo(FakeChatGenerator.TOTAL_TOKENS);
+    assertThat(usage.get("model").asText()).isEqualTo(FakeChatGenerator.MODEL);
 
     // Persisted once, after the full answer assembled: the renumbered answer + citations JSONB.
     List<ChatMessage> messages = messageRepository.lastMessages(conversationId, 10);

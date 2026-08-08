@@ -63,14 +63,16 @@ class SpringAiChatGenerator implements ChatGenerator {
               onToken.accept(delta);
             }
           }
-          // OpenAI reports usage on a trailing chunk (and echoes the model id); keep the latest.
+          // With stream_options.include_usage (set in GenerationConfig), OpenAI reports real usage
+          // on a trailing chunk while intermediate chunks carry an empty (all-zero) usage; guard on
+          // a positive total so an empty usage can never clobber the real one.
           ChatResponseMetadata metadata = chunk.getMetadata();
           if (metadata != null) {
             if (metadata.getModel() != null && !metadata.getModel().isBlank()) {
               model = metadata.getModel();
             }
             Usage usage = metadata.getUsage();
-            if (usage != null && usage.getTotalTokens() != null) {
+            if (usage != null && usage.getTotalTokens() != null && usage.getTotalTokens() > 0) {
               promptTokens = usage.getPromptTokens();
               completionTokens = usage.getCompletionTokens();
               totalTokens = usage.getTotalTokens();

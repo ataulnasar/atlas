@@ -30,25 +30,39 @@ class GenerationConfig {
       "T(org.springframework.util.StringUtils).hasText('${spring.ai.openai.api-key:}')")
   ChatGenerator chatGenerator(
       @Value("${spring.ai.openai.api-key}") String apiKey, GenerationProperties properties) {
-    boolean temperatureSupported = ChatModels.supportsCustomTemperature(properties.model());
-
-    OpenAiChatOptions.Builder options = OpenAiChatOptions.builder().model(properties.model());
-    if (temperatureSupported) {
-      options.temperature(properties.temperature());
-    }
+    OpenAiChatOptions options = chatOptions(properties);
 
     OpenAiApi api = OpenAiApi.builder().apiKey(apiKey).build();
     OpenAiChatModel chatModel =
-        OpenAiChatModel.builder().openAiApi(api).defaultOptions(options.build()).build();
+        OpenAiChatModel.builder().openAiApi(api).defaultOptions(options).build();
 
     // Effective settings at startup, so it's clear from the logs whether temperature was applied.
     log.info(
-        "Chat generation enabled: model={} temperature={}",
+        "Chat generation enabled: model={} temperature={} streamUsage=true",
         properties.model(),
-        temperatureSupported
-            ? properties.temperature()
+        options.getTemperature() != null
+            ? options.getTemperature()
             : "omitted (model family rejects an explicit temperature)");
 
     return new SpringAiChatGenerator(chatModel, properties.model());
+  }
+
+  /**
+   * The default request options for both the sync and streaming paths.
+   *
+   * <p>{@code streamUsage(true)} sets OpenAI's {@code stream_options.include_usage} so token usage
+   * is reported on the final streamed chunk — without it, a streamed response carries <em>no</em>
+   * usage and the answer's token count reads as zero (the sync {@code call()} always returns usage,
+   * so only streaming was affected). Spring AI strips {@code stream_options} from non-streaming
+   * requests on its own, so enabling it here is safe for {@code call()} too. Temperature is applied
+   * only for model families that accept an explicit value (see {@link ChatModels}).
+   */
+  static OpenAiChatOptions chatOptions(GenerationProperties properties) {
+    OpenAiChatOptions.Builder builder =
+        OpenAiChatOptions.builder().model(properties.model()).streamUsage(true);
+    if (ChatModels.supportsCustomTemperature(properties.model())) {
+      builder.temperature(properties.temperature());
+    }
+    return builder.build();
   }
 }
