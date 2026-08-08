@@ -85,6 +85,8 @@ User query --embed--> [hybrid retrieve: vector + full-text, fused via RRF] <----
 
 See [`docs/architecture/overview.md`](docs/architecture/overview.md) for more detail and
 [`docs/adr`](docs/adr) for the reasoning behind key design decisions.
+[`docs/retrieval-quality.md`](docs/retrieval-quality.md) shows the three retrieval engines
+compared on real queries — and why hybrid RRF is the default — with reproducible commands.
 
 ## Quickstart
 
