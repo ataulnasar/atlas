@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
  * This is meant to be the endpoint a UI can always call.
  */
 @Component
-class HybridSearchService {
+public class HybridSearchService {
 
   private static final Logger log = LoggerFactory.getLogger(HybridSearchService.class);
   private static final double SCORE_ROUNDING = 1_000_000d; // 6 dp — RRF scores are small
@@ -61,7 +61,7 @@ class HybridSearchService {
    * fuses them with RRF, and returns the topK fused hits. {@code embeddingService} may be null —
    * keyless mode — in which case only keyword search runs.
    */
-  List<HybridSearchHit> search(
+  public List<HybridSearchHit> search(
       String query, int topK, SearchFilter filter, EmbeddingService embeddingService) {
     long startNanos = System.nanoTime();
     int poolSize = Math.max(candidatePool, topK);

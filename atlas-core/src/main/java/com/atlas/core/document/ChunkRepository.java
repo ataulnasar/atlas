@@ -3,6 +3,7 @@ package com.atlas.core.document;
 import com.atlas.core.embedding.VectorLiteral;
 import com.atlas.core.ingestion.ChunkCandidate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -228,6 +229,25 @@ class ChunkRepository {
               rs.getInt("start_page"),
               rs.getInt("end_page"),
               rs.getString("content"));
+
+  private static final RowMapper<ChunkBody> CHUNK_BODY_MAPPER =
+      (rs, rowNum) ->
+          new ChunkBody(
+              (UUID) rs.getObject("id"), rs.getString("content"), rs.getInt("token_count"));
+
+  /**
+   * The full text and stored token count of the given chunks — what context assembly needs beyond
+   * the preview snippet a search hit carries. Order is unspecified (the caller keys by chunkId);
+   * unknown ids are simply absent from the result.
+   */
+  List<ChunkBody> findBodiesByIds(Collection<UUID> chunkIds) {
+    if (chunkIds.isEmpty()) {
+      return List.of();
+    }
+    String sql = "SELECT id, content, token_count FROM chunk WHERE id IN (:chunkIds)";
+    return jdbcTemplate.query(
+        sql, new MapSqlParameterSource().addValue("chunkIds", chunkIds), CHUNK_BODY_MAPPER);
+  }
 
   /**
    * Full detail of a single chunk for the citation-drill-down endpoint; empty if the id is unknown.
