@@ -142,6 +142,9 @@ The working backlog for getting to v1 itself is tracked in [`docs/plan.md`](docs
 Issues and pull requests are welcome. Since Atlas is early and its interfaces are still moving,
 please open an issue to discuss substantial changes before submitting a PR.
 
+For AI-assisted development, see [CLAUDE.md](CLAUDE.md) — guardrails for AI agents, including
+never touching local secrets (`docker/.env`).
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
