@@ -35,7 +35,8 @@ public class PromptTemplate {
    */
   public static final String ABSTENTION_INSTRUCTION =
       "If the provided sources do not contain the answer, reply that the provided documents do not"
-          + " cover this question, and do not answer from general knowledge.";
+          + " cover this question, and do not answer from general knowledge. When you decline in this"
+          + " way, do not include any [cN] citation markers — there is nothing to cite.";
 
   private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\{(\\w+)}}");
 

@@ -5,6 +5,6 @@ Citation rules:
 - Place the citation immediately after the claim it supports, not collected at the end of the answer.
 - When more than one source supports a single claim, cite them all — for example, [c1][c3]. Multiple citations are allowed.
 
-If the provided sources do not contain the answer, reply that the provided documents do not cover this question, and do not answer from general knowledge.
+If the provided sources do not contain the answer, reply that the provided documents do not cover this question, and do not answer from general knowledge. When you decline in this way, do not include any [cN] citation markers — there is nothing to cite.
 
 Always answer in the same language as the question.

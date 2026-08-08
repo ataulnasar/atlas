@@ -77,3 +77,19 @@ newer ELI-reference style. Atlas core ships no corpus-specific cleanup by defaul
 Copy `docker/.env.example` to `docker/.env` (as the top-level docker README already instructs)
 to pick these up automatically before re-ingesting — `env_file: .env` passes every key in that
 file through to `atlas-core`, so no other wiring is needed.
+
+### Known residual: a fourth footer variant (fix staged for next re-ingest)
+
+A later spot check (reading chunk full-content via `GET /api/chunks/{id}`) found a **fourth** ELI
+footer variant the three patterns above miss: `OJ L, 12.7.2024 EN` — the same fields as pattern 2
+but with `EN` **trailing** instead of leading, so `^EN OJ L …` never matches it. It is present in
+**259 of 3769 chunks** in the current corpus ingest (`SELECT count(*) FROM chunk WHERE content ~
+'OJ L,? [0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4} EN'`).
+
+The corrected pattern (`^OJ L.? \d\d?\.\d\d?\.\d{4} EN$`) is added to `docker/.env.example`'s
+documented list, commented as **apply on next re-ingest**. It is intentionally **not** applied to
+the current ingest: the mini-golden dataset
+([`atlas-evals/datasets/mini-golden.json`](../atlas-evals/datasets/mini-golden.json)) pins specific
+chunk indexes, and re-ingesting would renumber them. The residual footer text is inline noise but is
+not query vocabulary, so it has not measurably affected retrieval (see
+[`docs/retrieval-quality.md`](../docs/retrieval-quality.md) limitations).

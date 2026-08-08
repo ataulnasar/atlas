@@ -20,6 +20,8 @@ class PromptTemplateTest {
     assertThat(system).contains("ONLY"); // answer only from the sources
     assertThat(system).contains("[cN]"); // inline citation marker instruction
     assertThat(system).containsIgnoringCase("same language as the question");
+    // Abstaining must not leak citations: declining replies carry no [cN] markers.
+    assertThat(system).contains("do not include any [cN] citation markers");
   }
 
   @Test
