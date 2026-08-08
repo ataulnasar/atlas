@@ -134,6 +134,7 @@ The working backlog for getting to v1 itself is tracked in [`docs/plan.md`](docs
 | Path          | Purpose                                                             |
 |---------------|----------------------------------------------------------------------|
 | `atlas-core`  | Java/Spring Boot RAG service — ingestion, retrieval, orchestration |
+| `atlas-ui`    | React + Vite chat page — streaming answers with clickable citations  |
 | `atlas-evals` | Python harness for offline/online RAG quality evaluation            |
 | `atlas-fde`   | Forward-deployed engineering playbooks and deployment templates      |
 | `docker`      | Local dev and reference deployment compose files                    |
