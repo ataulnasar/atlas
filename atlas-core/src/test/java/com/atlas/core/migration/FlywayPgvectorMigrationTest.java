@@ -116,4 +116,45 @@ class FlywayPgvectorMigrationTest {
             Integer.class);
     assertThat(tokenCountNotNull).isEqualTo(1);
   }
+
+  @Test
+  void flywayAppliesV5AndCreatesConversationAndMessageSchema() {
+    Integer appliedV5Migrations =
+        jdbcTemplate.queryForObject(
+            "select count(*) from flyway_schema_history where version = '5' and success = true",
+            Integer.class);
+    assertThat(appliedV5Migrations).isEqualTo(1);
+
+    assertThat(jdbcTemplate.queryForObject("select to_regclass('conversation')", String.class))
+        .isEqualTo("conversation");
+    assertThat(jdbcTemplate.queryForObject("select to_regclass('message')", String.class))
+        .isEqualTo("message");
+
+    // citations is JSONB and nullable (NULL for user turns).
+    Integer citationsJsonbNullable =
+        jdbcTemplate.queryForObject(
+            "select count(*) from information_schema.columns "
+                + "where table_name = 'message' and column_name = 'citations' "
+                + "and data_type = 'jsonb' and is_nullable = 'YES'",
+            Integer.class);
+    assertThat(citationsJsonbNullable).isEqualTo(1);
+
+    // Stable ordering is enforced by a UNIQUE (conversation_id, seq) constraint.
+    Integer messageUniqueConstraints =
+        jdbcTemplate.queryForObject(
+            "select count(*) from information_schema.table_constraints "
+                + "where table_name = 'message' and constraint_type = 'UNIQUE'",
+            Integer.class);
+    assertThat(messageUniqueConstraints).isEqualTo(1);
+
+    // message.conversation_id cascades on delete.
+    String deleteRule =
+        jdbcTemplate.queryForObject(
+            "select rc.delete_rule from information_schema.referential_constraints rc "
+                + "join information_schema.table_constraints tc "
+                + "  on rc.constraint_name = tc.constraint_name "
+                + "where tc.table_name = 'message' and tc.constraint_type = 'FOREIGN KEY'",
+            String.class);
+    assertThat(deleteRule).isEqualTo("CASCADE");
+  }
 }
