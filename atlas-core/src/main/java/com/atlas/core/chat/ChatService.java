@@ -78,17 +78,52 @@ class ChatService {
   }
 
   /**
-   * Runs the full loop and returns the response. {@code embeddingService} may be null (keyless
-   * retrieval); {@code generator} is always non-null — the controller enforces that.
+   * Runs the full loop and returns the response, generating in one blocking call. {@code
+   * embeddingService} may be null (keyless retrieval); {@code generator} is always non-null — the
+   * controller enforces that.
    *
    * @throws ConversationNotFoundException if a supplied conversationId doesn't exist
    * @throws com.atlas.core.generation.GenerationException if the provider call fails (→ 502)
    */
   ChatResponse chat(
       ChatRequest request, EmbeddingService embeddingService, ChatGenerator generator) {
+    RagContext context = prepare(request, embeddingService);
+    long generateStart = System.nanoTime();
+    GenerationResult generation = generator.generate(context.systemPrompt(), context.userPrompt());
+    return finish(context, generation, System.nanoTime() - generateStart);
+  }
+
+  /**
+   * The same RAG loop as {@link #chat}, but generation streams: each text delta is delivered to
+   * {@code onToken} as it arrives (raw, with the model's original [cN] markers), and the fully
+   * reconciled {@link ChatResponse} — renumbered answer, cited-subset citations, usage — is
+   * returned once the answer is complete. Retrieval, assembly, citation reconciliation and
+   * persistence are the identical shared code ({@link #prepare} / {@link #finish}); only the
+   * generation call and the delivery differ, so the two endpoints cannot drift apart. Persistence
+   * happens once, in {@link #finish}, after the whole answer has assembled — a mid-stream failure
+   * throws before {@code finish} and persists nothing.
+   *
+   * @throws ConversationNotFoundException if a supplied conversationId doesn't exist
+   * @throws com.atlas.core.generation.GenerationException if the provider call fails mid-stream
+   */
+  ChatResponse chatStreaming(
+      ChatRequest request,
+      EmbeddingService embeddingService,
+      ChatGenerator generator,
+      java.util.function.Consumer<String> onToken) {
+    RagContext context = prepare(request, embeddingService);
+    long generateStart = System.nanoTime();
+    GenerationResult generation =
+        generator.generateStreaming(context.systemPrompt(), context.userPrompt(), onToken);
+    return finish(context, generation, System.nanoTime() - generateStart);
+  }
+
+  // Everything up to (but not including) generation: resolve the conversation + history, retrieve,
+  // assemble the prompt. Shared verbatim by the sync and streaming paths.
+  private RagContext prepare(ChatRequest request, EmbeddingService embeddingService) {
     String question = request.question().strip();
 
-    // 1. Resolve conversation + load history (a new conversation has none, and is created lazily in
+    // Resolve conversation + load history (a new conversation has none, and is created lazily in
     // the persist step so a generation failure leaves no orphan row).
     UUID existingConversationId = request.conversationId();
     List<QaPair> history;
@@ -101,7 +136,7 @@ class ChatService {
       history = List.of();
     }
 
-    // 2. Retrieve on the current question only.
+    // Retrieve on the current question only.
     long retrieveStart = System.nanoTime();
     int topK = normalizeTopK(request.topK());
     List<HybridSearchHit> hits =
@@ -111,30 +146,37 @@ class ChatService {
     List<RetrievedChunk> retrievedChunks = toRetrievedChunks(hits);
     long retrieveNanos = System.nanoTime() - retrieveStart;
 
-    // 3. Assemble context + prompt.
+    // Assemble context + prompt.
     long assembleStart = System.nanoTime();
     AssembledContext context = contextAssembler.assemble(retrievedChunks);
     String systemPrompt = promptTemplate.system();
     String userPrompt = promptTemplate.user(history, context.sources(), question);
     long assembleNanos = System.nanoTime() - assembleStart;
 
-    // 4. Generate (may throw GenerationException → 502).
-    long generateStart = System.nanoTime();
-    GenerationResult generation = generator.generate(systemPrompt, userPrompt);
-    long generateNanos = System.nanoTime() - generateStart;
+    return new RagContext(
+        existingConversationId,
+        question,
+        retrievalMode,
+        hits.size(),
+        context.citations(),
+        systemPrompt,
+        userPrompt,
+        retrieveNanos,
+        assembleNanos);
+  }
 
-    // 5. Reconcile citations against the offered set.
+  // Everything after generation: reconcile citations against the offered set, persist the turn in
+  // one transaction (only now that we have an answer), and build the response. Shared verbatim.
+  private ChatResponse finish(RagContext context, GenerationResult generation, long generateNanos) {
     CitationExtraction extraction =
-        citationExtractor.extract(generation.text(), context.citations());
+        citationExtractor.extract(generation.text(), context.offeredCitations());
     String answer = extraction.answer();
     List<Citation> citations = extraction.citations();
 
-    // 6. Persist the turn (both messages + touch) in one transaction, only now that we have an
-    // answer.
     UUID conversationId =
-        turnPersistence.persistTurn(existingConversationId, question, answer, citations);
+        turnPersistence.persistTurn(
+            context.existingConversationId(), context.question(), answer, citations);
 
-    // 7. Usage from the provider response.
     ChatUsage usage =
         new ChatUsage(
             generation.promptTokens(),
@@ -142,18 +184,18 @@ class ChatService {
             generation.totalTokens(),
             generation.model() != null ? generation.model() : generationProperties.model());
 
-    // 8. One INFO line per request; answer content only at DEBUG.
+    // One INFO line per request; answer content only at DEBUG.
     log.info(
         "chat conversationId={} retrievalMode={} retrieved={} contextChunks={} citations={} "
             + "latencyMs[retrieve={} assemble={} generate={}] "
             + "tokens[prompt={} completion={} total={}]",
         conversationId,
-        retrievalMode,
-        hits.size(),
-        context.citations().size(),
+        context.retrievalMode(),
+        context.retrievedCount(),
+        context.offeredCitations().size(),
         citations.size(),
-        millis(retrieveNanos),
-        millis(assembleNanos),
+        millis(context.retrieveNanos()),
+        millis(context.assembleNanos()),
         millis(generateNanos),
         usage.promptTokens(),
         usage.completionTokens(),
@@ -162,8 +204,22 @@ class ChatService {
       log.debug("chat conversationId={} answer={}", conversationId, answer);
     }
 
-    return new ChatResponse(conversationId, answer, citations, retrievalMode, usage);
+    return new ChatResponse(conversationId, answer, citations, context.retrievalMode(), usage);
   }
+
+  // Prepared pre-generation state carried from prepare() to finish(), so both the sync and
+  // streaming
+  // paths run the identical surrounding loop with only the generation call in between.
+  private record RagContext(
+      UUID existingConversationId,
+      String question,
+      String retrievalMode,
+      int retrievedCount,
+      List<Citation> offeredCitations,
+      String systemPrompt,
+      String userPrompt,
+      long retrieveNanos,
+      long assembleNanos) {}
 
   private List<QaPair> loadHistory(UUID conversationId) {
     int turns = generationProperties.historyTurns();

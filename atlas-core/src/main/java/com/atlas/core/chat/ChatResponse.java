@@ -22,9 +22,15 @@ import java.util.UUID;
  *       ChatUsage}).
  * </ul>
  *
- * <p>The SSE streaming variant of this endpoint (a later card) carries the same data over events:
- * token/delta events for {@code answer}, then a terminal {@code citations} event emitting this
- * exact {@link Citation} list, then a {@code done} event carrying this {@link ChatUsage}.
+ * <p>The SSE streaming variant ({@code POST /api/chat/stream}) carries this same data over events:
+ * repeated {@code token} events stream the {@code answer} as raw deltas <em>with the model's
+ * original [cN] markers</em>; then a terminal {@code citations} event ({@link
+ * StreamCitationsEvent}) carries the reconciled result — the {@code answer} renumbered to c1..cM
+ * and this exact cited-subset {@link Citation} list — because extraction runs on the complete
+ * answer only after streaming ends; then a {@code done} event ({@link StreamDoneEvent}) carries
+ * this {@link ChatUsage} and the {@code conversationId}. A mid-stream failure is delivered as an
+ * {@code error} event. Both endpoints run one shared RAG loop ({@code ChatService}); only the
+ * delivery differs.
  */
 public record ChatResponse(
     UUID conversationId,

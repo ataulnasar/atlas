@@ -63,4 +63,17 @@ class ChatKeylessIntegrationTest {
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().error()).isEqualTo("invalid_question");
   }
+
+  @Test
+  void streamChatIs503BeforeAnyStreamStarts() {
+    // The 503 is a plain JSON response, decided before an SSE stream is ever opened.
+    ResponseEntity<ApiError> response =
+        restTemplate.postForEntity(
+            "/api/chat/stream", new ChatRequest("Anything?"), ApiError.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().error()).isEqualTo("generation_disabled");
+    assertThat(response.getBody().message()).contains("/api/search");
+  }
 }
