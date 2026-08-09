@@ -58,6 +58,9 @@ jobs:
       - name: Lint (ruff)
         working-directory: atlas-evals
         run: uv run ruff check .
+      - name: Type-check (mypy)
+        working-directory: atlas-evals
+        run: uv run mypy
       - name: Test (pytest)
         working-directory: atlas-evals
         run: uv run pytest
