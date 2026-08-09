@@ -7,6 +7,9 @@ let counter = 0;
 const nextId = () => `m${Date.now()}-${counter++}`;
 
 function noticeForPreStream(status: number, error: ApiError): string {
+  if (status === 401) {
+    return "This Atlas server requires an API key. Add it via the gear icon (top right), then ask again.";
+  }
   if (status === 503) {
     return error.message; // generation_disabled: server already explains search still works
   }

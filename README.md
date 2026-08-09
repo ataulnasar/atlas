@@ -30,7 +30,11 @@ generation, with a Python-based quality bar (`atlas-evals`) and a documented dep
   with inline citations back to source chunks.
 - **Minimal React chat UI** — a lightweight chat page for interacting with Atlas and inspecting
   citations, alongside the REST API.
-- **API-key-protected endpoints** — simple API-key auth in front of `atlas-core`'s HTTP API.
+- **API-key-protected endpoints** — a static `X-API-Key` header is required on all `/api/**` routes
+  (`ATLAS_API_KEY`, env-only). Actuator health stays open. If `ATLAS_API_KEY` is unset/blank, auth is
+  **disabled** with a startup WARN — deliberate, so local dev, CI, and the quickstart run friction-free
+  while the production posture (set the key) is explicit rather than a baked-in default. Not OAuth2 —
+  that's v2. See `ApiKeyAuthFilter`.
 - **Pluggable LLM/embedding provider** — abstracted behind a thin client interface in `atlas-core`.
 - **Offline eval suite** (`atlas-evals`) — retrieval precision/recall and answer-faithfulness
   checks run against golden Q&A datasets, driven from Python against `atlas-core`'s HTTP API.

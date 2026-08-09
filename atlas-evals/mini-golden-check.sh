@@ -14,13 +14,23 @@
 #   ./mini-golden-check.sh [BASE_URL]
 #   ATLAS_BASE_URL=http://localhost:8080 ./mini-golden-check.sh
 #
+# Env:
+#   ATLAS_API_KEY  Optional; sent as the X-API-Key header when set. Leave unset against a
+#                  keyless-dev server (backward compatible).
+#
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATASET="${SCRIPT_DIR}/datasets/mini-golden.json"
 BASE_URL="${1:-${ATLAS_BASE_URL:-http://localhost:8080}}"
+API_KEY="${ATLAS_API_KEY:-}"
 TOP_K=5
 ENDPOINTS=(vector keyword hybrid)
+
+auth_args=()
+if [ -n "$API_KEY" ]; then
+  auth_args=(-H "X-API-Key: ${API_KEY}")
+fi
 
 command -v curl >/dev/null 2>&1 || { echo "error: curl is required" >&2; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "error: jq is required" >&2; exit 1; }
@@ -31,6 +41,7 @@ search() {
   local endpoint="$1" query="$2"
   curl -s -w '\n%{http_code}' --max-time 60 -X POST "${BASE_URL}/api/search/${endpoint}" \
     -H "Content-Type: application/json" \
+    "${auth_args[@]+"${auth_args[@]}"}" \
     -d "$(jq -n --arg q "$query" --argjson k "$TOP_K" '{query: $q, topK: $k}')"
 }
 

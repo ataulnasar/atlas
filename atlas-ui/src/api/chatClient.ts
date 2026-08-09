@@ -1,6 +1,7 @@
 import type { ApiError, ChatRequestBody, ChatUsage, ChunkView, Citation } from "./types";
 import type { ChatEvent } from "../state/chat";
 import { createSseDecoder, type SseEvent } from "./sse";
+import { authHeaders } from "./apiKey";
 
 export interface StreamHandlers {
   /** A decoded stream event (token / citations / done / error). */
@@ -64,7 +65,11 @@ export async function streamChat(
   try {
     response = await fetch("/api/chat/stream", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...authHeaders(),
+      },
       body: JSON.stringify(body),
       signal,
     });
@@ -118,7 +123,7 @@ export async function streamChat(
 
 /** Fetches full source text for a chunk (the citation drill-down). Throws on a non-2xx. */
 export async function fetchChunk(chunkId: string, signal?: AbortSignal): Promise<ChunkView> {
-  const response = await fetch(`/api/chunks/${chunkId}`, { signal });
+  const response = await fetch(`/api/chunks/${chunkId}`, { headers: authHeaders(), signal });
   if (!response.ok) {
     let message = `Could not load source (${response.status})`;
     try {

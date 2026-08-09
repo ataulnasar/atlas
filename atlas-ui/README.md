@@ -41,6 +41,15 @@ configuration is needed** anywhere in dev.
 | `npm test`          | Run the unit tests (Vitest)                           |
 | `npm run typecheck` | Type-check only                                       |
 
+## API key
+
+If the `atlas-core` server requires an API key (`ATLAS_API_KEY` set), enter it via the **gear icon**
+(top right). It's stored in `localStorage` and sent as `X-API-Key` on every request, including the
+SSE fetch. A `401` renders as an inline notice prompting you to add the key.
+
+Against a **keyless-dev** server (no `ATLAS_API_KEY`), leave it empty — no header is sent and it just
+works. The proxy and app need no auth configuration either way.
+
 ## What's tested
 
 Deliberately minimal, per the card scope: the tricky, logic-bearing parts are unit-tested, and
@@ -51,6 +60,8 @@ component/DOM testing is out of v1 scope.
 - `src/state/chat.test.ts` — the streaming **swap**: raw token deltas accumulate with the model's
   original `[cN]` markers, then the `citations` event swaps in the renumbered answer and attaches
   the cited subset that the chips render from.
+- `src/api/apiKey.test.ts` — the auth header is sent only when a key is set (absent otherwise, so
+  keyless-dev backends accept the request).
 
 ## How the stream is consumed
 

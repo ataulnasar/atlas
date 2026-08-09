@@ -44,6 +44,18 @@ spring:
 server:
   port: 8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only health is exposed. It lives at /actuator/health (outside /api/**), so the API-key
+        # filter never guards it — container/orchestrator probes work without a key.
+        include: health
+
+# API authentication key is read STRICTLY from the environment (ATLAS_API_KEY) — never defaulted
+# here, same discipline as spring.ai.openai.api-key. Unset/blank => auth disabled (dev/CI); a
+# startup WARN makes that explicit. See ApiKeyAuthConfig / ApiKeyAuthFilter and docker/.env.example.
+
 atlas:
   upload:
     max-file-size: 25MB
