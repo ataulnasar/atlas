@@ -419,6 +419,82 @@ body {
   content: none;
 }
 
+/* ---- Sources list (answer-level complement to the inline chips) --------- */
+
+.sources {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.sources-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.68rem;
+  color: var(--faint);
+  margin: 0 0 12px;
+}
+
+.source-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.source-row-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.source-row-file {
+  font-weight: 550;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.source-row-pages {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.source-row-cites {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-row-count {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+}
+
+.chip-sm {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  vertical-align: baseline;
+}
+
 /* ---- Notices (errors / abstentions surfaced inline, never as alerts) ----- */
 
 .notice {
@@ -594,6 +670,31 @@ body {
 .source-body {
   padding: 20px 22px;
   overflow-y: auto;
+}
+
+.source-anchor {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 12px 14px;
+  margin: 0 0 20px;
+}
+
+.source-anchor-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.64rem;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+
+.source-anchor-text {
+  font-family: var(--font-serif);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0;
 }
 
 .source-meta {

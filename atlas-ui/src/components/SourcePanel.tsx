@@ -7,6 +7,10 @@ type LoadState =
   | { status: "loaded"; chunk: ChunkView }
   | { status: "error"; message: string };
 
+function pageLabel(startPage: number, endPage: number): string {
+  return startPage === endPage ? `p. ${startPage}` : `pp. ${startPage}–${endPage}`;
+}
+
 /**
  * The citation drill-down: opens when a [cN] chip is clicked and loads the full source passage from
  * GET /api/chunks/{id}. This is the basic panel; the dedicated "Add citation display in UI" card can
@@ -61,18 +65,23 @@ export function SourcePanel({
       <aside className="source-panel" aria-label="Cited source">
         <div className="source-head">
           <div>
-            <p className="source-cite">{citation.citationId}</p>
+            <p className="source-cite">Cited as {citation.citationId}</p>
             <p className="source-file">{citation.documentFilename}</p>
-            <p className="source-pages tabular">
-              pp. {citation.startPage}–{citation.endPage}
-            </p>
+            <p className="source-pages tabular">{pageLabel(citation.startPage, citation.endPage)}</p>
           </div>
           <button type="button" className="source-close" onClick={onClose} aria-label="Close source">
             Close
           </button>
         </div>
         <div className="source-body">
-          {state.status === "loading" && <p className="source-status">Loading source…</p>}
+          {/* Presentation-only anchor: the snippet is the leading excerpt of this chunk that the
+              citation points at, shown first so the reader lands oriented before the full passage.
+              (Highlighting the exact matched span in the full text is search, and out of scope.) */}
+          <div className="source-anchor">
+            <p className="source-anchor-label">Cited excerpt</p>
+            <p className="source-anchor-text">{citation.snippet}</p>
+          </div>
+          {state.status === "loading" && <p className="source-status">Loading full source…</p>}
           {state.status === "error" && (
             <div className="notice" role="status">
               <span className="notice-label">Couldn’t load source</span>
@@ -81,7 +90,9 @@ export function SourcePanel({
           )}
           {state.status === "loaded" && (
             <>
-              <p className="source-meta tabular">Chunk #{state.chunk.chunkIndex}</p>
+              <p className="source-meta tabular">
+                Full source · chunk #{state.chunk.chunkIndex}
+              </p>
               <p className="source-text">{state.chunk.content}</p>
             </>
           )}

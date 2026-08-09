@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import type { Citation } from "../api/types";
 import type { AssistantMessage, Message } from "../state/chat";
+import { summarizeSources } from "../state/sources";
 
 const MARKER = /(\[c\d+\])/g;
 const MARKER_ONE = /^\[(c\d+)\]$/;
@@ -40,6 +41,48 @@ function AnswerText({
         return <Fragment key={i}>{part}</Fragment>;
       })}
     </>
+  );
+}
+
+/** Answer-level list of cited documents — the complement to the inline chips. */
+function SourcesSection({
+  citations,
+  onCite,
+}: {
+  citations: Citation[];
+  onCite: (c: Citation) => void;
+}) {
+  const sources = summarizeSources(citations);
+  return (
+    <section className="sources" aria-label="Sources">
+      <p className="sources-label">Sources</p>
+      <ul className="source-rows">
+        {sources.map((source) => (
+          <li key={source.documentId} className="source-row">
+            <div className="source-row-main">
+              <span className="source-row-file">{source.documentFilename}</span>
+              <span className="source-row-pages tabular">{source.pages}</span>
+            </div>
+            <div className="source-row-cites">
+              <span className="source-row-count">
+                {source.citations.length} citation{source.citations.length === 1 ? "" : "s"}
+              </span>
+              {source.citations.map((c) => (
+                <button
+                  key={c.citationId}
+                  type="button"
+                  className="chip chip-sm"
+                  onClick={() => onCite(c)}
+                  title={`${c.documentFilename}, pp. ${c.startPage}–${c.endPage}`}
+                >
+                  {c.citationId}
+                </button>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -85,18 +128,15 @@ function AssistantTurn({
       )}
       {message.status === "complete" && (
         <p className="turn-meta">
-          {message.citations.length > 0 ? (
-            <span>
-              {message.citations.length} source{message.citations.length === 1 ? "" : "s"} cited
-            </span>
-          ) : (
-            uncited && <span>No sources cited</span>
-          )}
+          {uncited && <span>No sources cited</span>}
           {message.retrievalMode && <span>{message.retrievalMode} retrieval</span>}
           {message.usage?.totalTokens != null && (
             <span className="tabular">{message.usage.totalTokens.toLocaleString()} tokens</span>
           )}
         </p>
+      )}
+      {message.status === "complete" && message.citations.length > 0 && (
+        <SourcesSection citations={message.citations} onCite={onCite} />
       )}
     </div>
   );
