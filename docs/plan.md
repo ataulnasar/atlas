@@ -743,7 +743,7 @@ Write unit and integration tests for Atlas retrieval. Cover RRF ranking, citatio
 **Definition of Done:** Retrieval tests pass reliably.
 
 
-## Phase 3 — Chat/RAG
+## Phase 3 — Chat/RAG  ✅ Complete
 
 ### Design chat schema — 3h
 
@@ -964,7 +964,12 @@ Implement simple API key authentication for Atlas using a Spring Security filter
 
 **Definition of Done:** All API endpoints reject requests without a valid key; frontend and eval client still work.
 
-### Record first demo video — 2h
+### Record first demo video — 2h  ➡️ Merged into Phase 6
+
+> **Merged into Phase 6's "Create demo GIF/video assets."** Deferred by decision — one recording
+> session at v1.0 with final eval numbers, avoiding a duplicate effort (a Phase 3 recording would
+> only be re-shot once the UI polish and eval report land). The full demo video arc now lives in
+> that Phase 6 card.
 
 **Priority:** Medium  
 **Labels:** demo,launch
@@ -1413,6 +1418,11 @@ Create a public GitHub roadmap for Atlas. Add v2/v3 issues for cross-encoder rer
 **Definition of Done:** Roadmap exists without expanding v1.
 
 ### Create demo GIF/video assets — 4h
+
+> **Now also covers the full demo video** (absorbed from Phase 3's "Record first demo video").
+> Single recording session at v1.0 with final eval numbers. Target 3–4 min, arc: live cited answer
+> → citation panel → abstention → multi-turn + architecture flyover → close. The README GIF and
+> screenshots are cut from this same session.
 
 **Priority:** High  
 **Labels:** demo,content
