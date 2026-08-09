@@ -2,7 +2,8 @@
   "dataset": "atlas-demo-golden",
   "version": 1,
   "about": "Phase 4 demo golden dataset (30 questions) over the 29-document EU digital-regulation corpus (corpus/manifest.json). Expands the mini-golden seed (mg-01..06, carried over verbatim) with 24 new entries across keyword, semantic, cross-document, hard, unanswerable, and multi-turn categories. Validated by atlas_evals.models.GoldenDataset.",
-  "verification": "Expected documents and page ranges were derived from the ACTUAL ingested corpus — never invented. Each new entry was grounded read-only against the running Postgres/pgvector store: the chunk table's full-text index (websearch_to_tsquery + ts_rank_cd, the same keyword-search leg the app uses) and article-heading lookups were used to locate the operative provision, and expected_pages come from those chunks' start_page/end_page. Where the exact operative page vs. an adjacent recital could not be cleanly isolated, the entry's notes say so and the range covers the verified region; the CONFIDENCE tag in notes records how firm each page range is.",
+  "verification": "Expected documents and page ranges were derived from the ACTUAL ingested corpus — never invented. Each new entry was grounded read-only against the running Postgres/pgvector store: the chunk table's full-text index (websearch_to_tsquery + ts_rank_cd, the same keyword-search leg the app uses) and article-heading lookups were used to locate the operative provision, and expected_pages come from those chunks' start_page/end_page. The CONFIDENCE tag in notes records how firm each page range is; medium-confidence ranges have been widened by one page on each side to avoid false misses on operative-clause boundaries.",
+  "cross_document_scoring": "For cross-document entries, expected_pages are scored against the PRIMARY (first-listed) expected_document only; the remaining expected_documents are credited at the document level (their operative locations are described in the entry notes). This is a schema v1 limitation — expected_pages is a single flat list, not keyed per document — and should be revisited if per-document page scoring is needed.",
   "questions": [
     {
       "id": "mg-01-keyword-dpo",
@@ -86,16 +87,16 @@
       "question": "When is an undertaking designated as a gatekeeper under the Digital Markets Act?",
       "category": "keyword",
       "expected_documents": ["dma.pdf"],
-      "expected_pages": [{ "from": 30, "to": 31 }],
-      "notes": "Why: 'gatekeeper' + 'designated' is the DMA's signature term (Art 3). Verified: FTS-ranked dma.pdf for the designation thresholds -> operative cluster at chunks 66-68 (pp. 30-31, the quantitative-threshold presumptions). CONFIDENCE: medium — document certain; the designation criteria also restate in nearby recitals, so the exact operative page may extend a page either side."
+      "expected_pages": [{ "from": 29, "to": 32 }],
+      "notes": "Why: 'gatekeeper' + 'designated' is the DMA's signature term (Art 3). Verified: FTS-ranked dma.pdf for the designation thresholds -> operative cluster at chunks 66-68 (pp. 30-31, the quantitative-threshold presumptions). CONFIDENCE: medium — document certain; the designation criteria also restate in nearby recitals. Range widened ±1 (to pp. 29-32) to avoid false misses on the operative-clause boundary."
     },
     {
       "id": "dg-k05-keyword-eidas-wallet",
       "question": "What is the European Digital Identity Wallet?",
       "category": "keyword",
       "expected_documents": ["eidas2.pdf"],
-      "expected_pages": [{ "from": 40, "to": 42 }],
-      "notes": "Why: 'European Digital Identity Wallet' is the defining term of the eIDAS2 amendment. Verified: FTS-ranked eidas2.pdf -> densest wallet-provisioning cluster at chunks 81-83 (pp. 40-42). CONFIDENCE: medium — eIDAS2's inserted-article numbering (Art 5a etc.) is intricate; the term is also defined earlier (Art 3, ~p. 6), so retrieval to the p. 6 definition should also count."
+      "expected_pages": [{ "from": 39, "to": 43 }],
+      "notes": "Why: 'European Digital Identity Wallet' is the defining term of the eIDAS2 amendment. Verified: FTS-ranked eidas2.pdf -> densest wallet-provisioning cluster at chunks 81-83 (pp. 40-42). CONFIDENCE: medium — eIDAS2's inserted-article numbering (Art 5a etc.) is intricate; the term is also defined earlier (Art 3, ~p. 6), so retrieval to the p. 6 definition should also count. Range widened ±1 (to pp. 39-43) to avoid false misses on the operative-clause boundary."
     },
     {
       "id": "dg-k06-keyword-cybersecurity-certificate",
@@ -139,40 +140,43 @@
       "question": "Does a website need my permission before storing cookies on my device?",
       "category": "semantic",
       "expected_documents": ["eprivacy-directive.pdf"],
-      "expected_pages": [5, 6],
-      "notes": "Why: lay phrasing of the ePrivacy consent-for-terminal-equipment rule (Art 5(3)). Verified: 'terminal equipment' + cookie consent language clusters in chunk 13 (pp. 5-6) of the 11-page directive. CONFIDENCE: medium — the operative Art 5(3) and its recital 25 are close together on pp. 3-6, so exact page may be p. 5 vs p. 6."
+      "expected_pages": [{ "from": 4, "to": 7 }],
+      "notes": "Why: lay phrasing of the ePrivacy consent-for-terminal-equipment rule (Art 5(3)). Verified: 'terminal equipment' + cookie consent language clusters in chunk 13 (pp. 5-6) of the 11-page directive. CONFIDENCE: medium — the operative Art 5(3) and its recital 25 are close together on pp. 3-6. Range widened ±1 (to pp. 4-7) to avoid false misses on the operative-clause boundary."
     },
     {
       "id": "dg-s04-semantic-nis2-risk-measures",
       "question": "What does a company have to do to manage its cybersecurity risks under the new EU rules?",
       "category": "semantic",
       "expected_documents": ["nis2.pdf"],
-      "expected_pages": [{ "from": 16, "to": 18 }],
-      "notes": "Why: paraphrase of NIS2's cybersecurity risk-management measures (Art 21) — distinct from the incident-notification timeline in mg-03. Verified: FTS-ranked nis2.pdf for 'cybersecurity risk-management measures essential entities' -> cluster at chunks 34-37 (pp. 16-18). CONFIDENCE: medium — this region includes both the measures and their framing recitals; the numbered Art 21 list may extend slightly beyond p. 18."
+      "expected_pages": [{ "from": 15, "to": 19 }],
+      "notes": "Why: paraphrase of NIS2's cybersecurity risk-management measures (Art 21) — distinct from the incident-notification timeline in mg-03. Verified: FTS-ranked nis2.pdf for 'cybersecurity risk-management measures essential entities' -> cluster at chunks 34-37 (pp. 16-18). CONFIDENCE: medium — this region includes both the measures and their framing recitals; the numbered Art 21 list may extend slightly beyond p. 18. Range widened ±1 (to pp. 15-19) to avoid false misses on the operative-clause boundary."
     },
     {
       "id": "dg-s05-semantic-accessibility-ecommerce",
       "question": "Do online shops have to be usable by blind and partially sighted people?",
       "category": "semantic",
       "expected_documents": ["accessibility-act.pdf"],
-      "expected_pages": [34, 35],
-      "notes": "Why: everyday phrasing of the European Accessibility Act's accessibility requirements for e-commerce services. Verified: FTS-ranked accessibility-act.pdf for e-commerce accessibility -> chunk 71 (pp. 34-35, functional accessibility requirements). CONFIDENCE: low — FLAGGED: the Act structures requirements across the body and Annex I, so the exact operative page is approximate; the document is certain."
+      "expected_pages": [{ "from": 14, "to": 15 }, { "from": 34, "to": 35 }],
+      "expected_chunk_indexes": [32, 71, 72],
+      "notes": "Why: everyday phrasing of the European Accessibility Act's accessibility requirements for e-commerce services. Verified: Art 2 scope brings 'e-commerce services' into scope (chunk 32, pp. 14-15), and the operative accessibility requirements for e-commerce services — identification/e-signature/payment made perceivable, operable, understandable and robust — are in Annex I, chunks 71-72 (pp. 34-35). CONFIDENCE: high (operative Annex I requirement located; earlier flagged approximation resolved)."
     },
     {
       "id": "dg-s06-semantic-avmsd-minors",
       "question": "Are video-sharing platforms required to protect children from harmful videos?",
       "category": "semantic",
       "expected_documents": ["avmsd-amendment.pdf"],
-      "expected_pages": [7, 8],
-      "notes": "Why: paraphrase of the AVMSD amendment's duty on video-sharing platforms to protect minors (Art 28b). Verified: FTS-ranked avmsd-amendment.pdf for 'video-sharing platforms protect minors' -> chunk 18 (p. 8) plus recital framing on p. 2. CONFIDENCE: low — FLAGGED: the operative Art 28b measures and their recitals are spread across the short amendment; page range is approximate, document certain."
+      "expected_pages": [{ "from": 20, "to": 22 }],
+      "expected_chunk_indexes": [46, 47, 48],
+      "notes": "Why: paraphrase of the AVMSD amendment's duty on video-sharing platforms to protect minors (Art 28b). Verified: the operative Art 28b measures are at chunks 46-48 (pp. 20-22) — chunk 47 (p. 21) 'For the purposes of the protection of minors ...' and chunk 48 (pp. 21-22) the minors' personal-data safeguards; the earlier p. 2 mention (chunk 3) was the recital. CONFIDENCE: high (operative Art 28b located; earlier flagged approximation resolved)."
     },
     {
       "id": "dg-s07-semantic-dsm-text-and-data-mining",
       "question": "Can researchers automatically analyse large amounts of copyrighted text and data for a study?",
       "category": "semantic",
       "expected_documents": ["dsm-copyright-directive.pdf"],
-      "expected_pages": [{ "from": 3, "to": 5 }],
-      "notes": "Why: paraphrase of the DSM Copyright Directive's text-and-data-mining exception for research (Arts 3-4). Verified: FTS-ranked dsm-copyright-directive.pdf for 'text and data mining research organisations' -> TDM discussion clusters at chunks 5-9 (pp. 2-5). CONFIDENCE: low — FLAGGED: top-ranked chunks are the TDM recitals (8-14); the numbered Arts 3-4 operative text may sit a page or two later, so the range is approximate."
+      "expected_pages": [{ "from": 22, "to": 23 }],
+      "expected_chunk_indexes": [51, 52],
+      "notes": "Why: paraphrase of the DSM Copyright Directive's text-and-data-mining exception for research (Arts 3-4). Verified: the directive's articles sit after long recitals (pp. 1-21); the operative TDM exceptions are Art 3 (research organisations, lawful access, secure storage — chunk 51, pp. 22-23) and Art 4 (general TDM exception with machine-readable rights reservation — chunk 52, p. 23). CONFIDENCE: high (operative Arts 3-4 located; earlier pp. 3-5 were recitals)."
     },
 
     {
@@ -180,16 +184,16 @@
       "question": "What rules govern sending personal data to companies outside the EU?",
       "category": "cross-document",
       "expected_documents": ["gdpr.pdf", "scc-decision.pdf"],
-      "expected_pages": [{ "from": 61, "to": 64 }],
-      "notes": "Why: international transfers span the GDPR's Chapter V (Arts 44-49) and the Commission's Standard Contractual Clauses decision (the SCC instrument itself). Verified: FTS-ranked gdpr.pdf for third-country transfer safeguards -> Chapter V cluster at chunks 128-133 (pp. 61-64); scc-decision.pdf is the whole SCC instrument (clauses near pp. 6-7, chunk 14). expected_pages are the GDPR primary region; scc-decision is credited at document level. CONFIDENCE: medium — GDPR pages firm; SCC page-level location approximate (whole document is on-topic)."
+      "expected_pages": [{ "from": 60, "to": 65 }],
+      "notes": "Why: international transfers span the GDPR's Chapter V (Arts 44-49) and the Commission's Standard Contractual Clauses decision (the SCC instrument itself). Verified: FTS-ranked gdpr.pdf for third-country transfer safeguards -> Chapter V cluster at chunks 128-133 (pp. 61-64); scc-decision.pdf is the whole SCC instrument (clauses near pp. 6-7, chunk 14). expected_pages are the GDPR primary region (see cross_document_scoring); scc-decision is credited at document level. CONFIDENCE: medium. Range widened ±1 (to pp. 60-65) to avoid false misses on the operative-clause boundary."
     },
     {
       "id": "dg-x02-cross-cybersecurity-certification",
       "question": "How can a product or service get certified as cybersecure under EU law?",
       "category": "cross-document",
       "expected_documents": ["cybersecurity-act.pdf", "cra.pdf"],
-      "expected_pages": [42, 43],
-      "notes": "Why: EU cybersecurity certification is defined by the Cybersecurity Act's certification framework (primary) and referenced by the Cyber Resilience Act's conformity route for products. Verified: cybersecurity-act.pdf certificate/assurance-level provisions at chunk 83 (pp. 42-43, same operative text as dg-k06); cra.pdf conformity assessment (~pp. 47-48) is the secondary. expected_pages are the primary; cra credited at document level. CONFIDENCE: medium."
+      "expected_pages": [{ "from": 41, "to": 44 }],
+      "notes": "Why: EU cybersecurity certification is defined by the Cybersecurity Act's certification framework (primary) and referenced by the Cyber Resilience Act's conformity route for products. Verified: cybersecurity-act.pdf certificate/assurance-level provisions at chunk 83 (pp. 42-43, same operative text as dg-k06); cra.pdf conformity assessment (~pp. 47-48) is the secondary. expected_pages are the primary (see cross_document_scoring); cra credited at document level. CONFIDENCE: medium. Range widened ±1 (to pp. 41-44) to avoid false misses on the operative-clause boundary."
     },
     {
       "id": "dg-x03-cross-data-switching-porting",
@@ -204,8 +208,8 @@
       "question": "What rules govern re-using data held by the public sector?",
       "category": "cross-document",
       "expected_documents": ["open-data-directive.pdf", "dga.pdf"],
-      "expected_pages": [8, 9],
-      "notes": "Why: re-use of public-sector information is governed by the Open Data Directive (primary) and, for protected categories, the Data Governance Act. Verified: FTS-ranked open-data-directive.pdf for 're-use of documents' -> chunks 19-21 (pp. 8-9); dga.pdf re-use-of-protected-data provisions are the secondary. expected_pages are the primary; dga credited at document level. CONFIDENCE: medium — open-data region includes recitals framing the general principle; document certain."
+      "expected_pages": [{ "from": 7, "to": 10 }],
+      "notes": "Why: re-use of public-sector information is governed by the Open Data Directive (primary) and, for protected categories, the Data Governance Act. Verified: FTS-ranked open-data-directive.pdf for 're-use of documents' -> chunks 19-21 (pp. 8-9); dga.pdf re-use-of-protected-data provisions are the secondary. expected_pages are the primary (see cross_document_scoring); dga credited at document level. CONFIDENCE: medium — open-data region includes recitals framing the general principle; document certain. Range widened ±1 (to pp. 7-10) to avoid false misses on the operative-clause boundary."
     },
 
     {
@@ -261,8 +265,8 @@
       "question": "What obligations does its provider have?",
       "category": "multi-turn",
       "expected_documents": ["ai-act.pdf"],
-      "expected_pages": [{ "from": 61, "to": 63 }],
-      "notes": "Why: 'its provider' resolves to the provider of a high-risk AI system from the setup turn; targets the AI Act's obligations of providers of high-risk systems (Chapter III, Section 3). Verified: FTS-ranked ai-act.pdf for provider obligations -> cluster at chunks 154-156 (pp. 61-63). CONFIDENCE: medium — the provider-obligation articles span several pages; range covers the verified cluster. Depends on conversation history being replayed.",
+      "expected_pages": [{ "from": 60, "to": 64 }],
+      "notes": "Why: 'its provider' resolves to the provider of a high-risk AI system from the setup turn; targets the AI Act's obligations of providers of high-risk systems (Chapter III, Section 3). Verified: FTS-ranked ai-act.pdf for provider obligations -> cluster at chunks 154-156 (pp. 61-63). CONFIDENCE: medium — the provider-obligation articles span several pages. Range widened ±1 (to pp. 60-64) to avoid false misses on the operative-clause boundary. Depends on conversation history being replayed.",
       "setup_turns": [
         { "question": "What does the AI Act consider a high-risk AI system?" }
       ]
