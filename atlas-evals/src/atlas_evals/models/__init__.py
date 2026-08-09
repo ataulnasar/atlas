@@ -23,16 +23,22 @@ from atlas_evals.models.api import (
     SearchResponse,
 )
 from atlas_evals.models.golden import (
-    ExpectedPageRange,
+    Category,
     GoldenDataset,
     GoldenQuestion,
+    PageRange,
+    SetupTurn,
+    load_datasets,
 )
 
 __all__ = [
     # golden dataset
-    "ExpectedPageRange",
+    "Category",
     "GoldenDataset",
     "GoldenQuestion",
+    "PageRange",
+    "SetupTurn",
+    "load_datasets",
     # api contract
     "ApiErrorBody",
     "ChatRequest",

@@ -1,65 +1,68 @@
 {
   "dataset": "atlas-mini-golden",
   "version": 1,
-  "about": "Mini golden dataset (5 questions) for Phase 2 retrieval tuning against the EU digital-regulation demo corpus. Used manually to compare vector vs keyword vs hybrid retrieval while tuning chunk size, topK, and RRF, so Phase 2 decisions are measured rather than guessed.",
-  "seeds_phase_4": "THESE 5 QUESTIONS SEED THE FULL PHASE 4 GOLDEN DATASET. Phase 4 ('Define golden dataset schema' and 'Create demo golden dataset', ~20 questions) expands this seed into the atlas-evals datasets/ directory convention (questions.jsonl + expected answers/chunks + difficulty tags). Keep the ids stable so results stay comparable across phases.",
+  "about": "Mini golden dataset (6 questions) for Phase 2 retrieval tuning against the EU digital-regulation demo corpus. Used manually to compare vector vs keyword vs hybrid retrieval while tuning chunk size, topK, and RRF, so Phase 2 decisions are measured rather than guessed.",
+  "seeds_phase_4": "THESE 6 QUESTIONS SEED THE FULL PHASE 4 GOLDEN DATASET. Phase 4 ('Define golden dataset schema' and 'Create demo golden dataset') expands this seed into datasets/demo-golden.json (~30 questions); mg-01..06 are carried over verbatim there. Keep the ids stable so results stay comparable across phases.",
   "corpus": "corpus/manifest.json — 29 EU digital-regulation PDFs fetched from EUR-Lex. Ingest with corpus/download.sh then corpus/ingest.sh before running the check.",
   "usage": "With the docker compose stack up and the corpus ingested, run atlas-evals/mini-golden-check.sh (needs curl + jq). For each answerable question it reports, per endpoint (/api/search/{vector,keyword,hybrid}), hit@5 and the rank of the first expected-document chunk. For the unanswerable question it reports the top score per endpoint (which should be low).",
   "schema": {
     "id": "stable identifier (do not renumber across phases)",
-    "question": "natural-language query POSTed to the search endpoints",
-    "expected_document": "filename from corpus/manifest.json, or null when the corpus cannot answer",
-    "expected_pages": "{ from, to } inclusive 1-based page range, or an array of page numbers when the relevant pages are disjoint, or null",
-    "category": "keyword | semantic | cross-document | hard | unanswerable",
-    "notes": "why this question is in the set / what it is meant to exercise"
+    "question": "natural-language query POSTed to the search/chat endpoints",
+    "category": "keyword | semantic | cross-document | hard | unanswerable | multi-turn",
+    "expected_documents": "list of filenames from corpus/manifest.json; empty for unanswerable (a single 'expected_document' string is also accepted on input)",
+    "expected_pages": "list mixing 1-based page numbers and { from, to } inclusive ranges; empty for unanswerable. Page-level matching is mandatory for answerable entries.",
+    "expected_chunk_indexes": "optional list of chunk indexes known to hold the answer",
+    "setup_turns": "optional; for multi-turn entries, the prior user turns [{ question }] to send before 'question'",
+    "notes": "why this question is in the set / how the expected pages were verified"
   },
   "questions": [
     {
       "id": "mg-01-keyword-dpo",
       "question": "What are the tasks of the data protection officer?",
-      "expected_document": "gdpr.pdf",
-      "expected_pages": { "from": 55, "to": 56 },
       "category": "keyword",
+      "expected_documents": ["gdpr.pdf"],
+      "expected_pages": [{ "from": 55, "to": 56 }],
       "notes": "Keyword-heavy: the distinctive phrase 'data protection officer' and 'tasks' appear verbatim in GDPR Art 37-39 (pp. 55-56), so websearch_to_tsquery matches and keyword search ranks GDPR at #1 — as do vector and hybrid. Guards against a chunking/RRF change silently regressing exact-term retrieval."
     },
     {
       "id": "mg-02-semantic-digital-content-remedies",
       "question": "If software or a streaming service I paid for does not work as advertised, what can I demand from the trader?",
-      "expected_document": "digital-content-directive.pdf",
-      "expected_pages": { "from": 22, "to": 25 },
       "category": "semantic",
+      "expected_documents": ["digital-content-directive.pdf"],
+      "expected_pages": [{ "from": 22, "to": 25 }],
       "notes": "Semantic paraphrase: the colloquial wording ('doesn't work as advertised', 'demand from the trader') shares almost no rare terms with the legal text ('conformity', 'remedies', Art 14, remedies pp. 22-25; conformity basis ~p. 13), so keyword search misses entirely while vector returns the Digital Content Directive across the whole top-5. The clearest vector-beats-keyword case in the set."
     },
     {
       "id": "mg-03-cross-document-incident-notification",
       "question": "How quickly must an essential-services operator notify authorities after a serious security incident?",
-      "expected_document": "nis2.pdf",
-      "expected_pages": { "from": 49, "to": 51 },
       "category": "cross-document",
+      "expected_documents": ["nis2.pdf"],
+      "expected_pages": [{ "from": 49, "to": 51 }],
       "notes": "Incident-notification timelines appear across several cybersecurity instruments. NIS2 (Art 23, 24h early warning / 72h notification, pp. 49-51) is the primary/current source; nis1.pdf (the predecessor, ~pp. 20-22) is an acceptable secondary, and dora.pdf / cra.pdf carry ICT- and product-specific reporting. expected_document is the primary — Phase 4 should credit all acceptable sources."
     },
     {
       "id": "mg-04-hard-mica-art-white-paper",
       "question": "What must the crypto-asset white paper for an asset-referenced token contain?",
-      "expected_document": "mica.pdf",
-      "expected_pages": { "from": 41, "to": 48 },
       "category": "hard",
+      "expected_documents": ["mica.pdf"],
+      "expected_pages": [{ "from": 41, "to": 48 }],
       "notes": "Hard: precise MiCA jargon ('asset-referenced token', 'crypto-asset white paper') buried in a 166-page document, and the full-sentence phrasing defeats keyword search (all content words must co-occur in one chunk). Vector and hybrid rank MiCA #1; keyword returns nothing. Exercises retrieval precision on the largest document (further detail lives in annexes ~pp. 148-153)."
     },
     {
       "id": "mg-05-unanswerable-water-intake",
       "question": "What is the recommended daily amount of water an adult should drink?",
-      "expected_document": null,
-      "expected_pages": null,
       "category": "unanswerable",
+      "expected_documents": [],
+      "expected_pages": [],
       "notes": "Out-of-corpus (health/nutrition, not EU digital regulation). The top vector score should be low (~0.2 observed) versus ~0.77 for answerable questions — the signal a Phase 4 abstention check would threshold on. Note: topically-adjacent unanswerables (e.g. US HIPAA/CCPA) score higher (~0.5) because the corpus's US adequacy decisions overlap, so this seed deliberately uses a clean off-domain case."
     },
     {
       "id": "mg-06-hard-aiact-high-risk",
       "question": "What does the AI Act consider a high-risk AI system?",
-      "expected_document": "ai-act.pdf",
-      "expected_pages": [14, 53, 54, 55, 56],
       "category": "hard",
+      "expected_documents": ["ai-act.pdf"],
+      "expected_pages": [14, 53, 54, 55, 56],
+      "expected_chunk_indexes": [38, 138, 139, 141, 142],
       "notes": "Known-hard query that exists to permanently track a fusion behaviour. The Article 6 high-risk classification chunks are indexes 38 (p. 14, classifying recital), 138 (pp. 53-54), and 139/141/142 (pp. 54-56). CORRECTION (verified via GET /api/chunks): index 138 is a DEFINITIONAL chunk — it contains Article 6(1)-(3), the classification test itself. It merely OPENS with the tail of Article 5 (annual reporting on real-time remote biometric identification), which is all its 300-char snippet shows; an earlier analysis mistook the snippet for the whole chunk and wrongly labelled 138 a term-dense distractor. Vector correctly ranks 138 #1. Keyword's AND-semantics never surface it (the query's content words don't all co-occur), so it appears in the vector list only; hybrid RRF therefore demotes it out of the top 5 as a single-engine result. That is a mild fusion cost, not a win: hybrid's top 4 are still the other Article-6 chunks (38, 142, 139, 141). The regression signal is thus FLIPPED — an engine or fusion config that drops index 138 from the top 5 is losing the single best chunk. Expected chunk indexes for future page-level matching: 138 joins 38/139/141/142."
     }
   ]
