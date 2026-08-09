@@ -32,6 +32,33 @@ def test_every_committed_dataset_validates():
     assert any(d.name == "atlas-mini-golden" for d in datasets)
 
 
+def test_demo_golden_has_thirty_questions_across_all_categories():
+    from collections import Counter
+
+    dataset = GoldenDataset.from_json_file(DATASETS_DIR / "demo-golden.json")
+    assert dataset.name == "atlas-demo-golden"
+    assert len(dataset.questions) == 30
+
+    # The mini-golden seeds are carried over verbatim.
+    ids = {q.id for q in dataset.questions}
+    assert {f"mg-0{n}" for n in range(1, 7)} <= {i[:5] for i in ids}
+
+    counts = Counter(q.category for q in dataset.questions)
+    assert counts[Category.KEYWORD] == 8
+    assert counts[Category.SEMANTIC] == 8
+    assert counts[Category.CROSS_DOCUMENT] == 5
+    assert counts[Category.HARD] == 4
+    assert counts[Category.UNANSWERABLE] == 3
+    assert counts[Category.MULTI_TURN] == 2
+
+    # Every multi-turn entry carries setup turns; every answerable entry has verified pages.
+    for q in dataset.questions:
+        if q.category is Category.MULTI_TURN:
+            assert q.setup_turns
+        if q.category is not Category.UNANSWERABLE:
+            assert q.expected_page_set()
+
+
 def test_mini_golden_migrated_to_the_new_schema():
     dataset = GoldenDataset.from_json_file(DATASETS_DIR / "mini-golden.json")
     by_id = {q.id: q for q in dataset.questions}

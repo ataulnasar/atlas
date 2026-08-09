@@ -1,0 +1,271 @@
+{
+  "dataset": "atlas-demo-golden",
+  "version": 1,
+  "about": "Phase 4 demo golden dataset (30 questions) over the 29-document EU digital-regulation corpus (corpus/manifest.json). Expands the mini-golden seed (mg-01..06, carried over verbatim) with 24 new entries across keyword, semantic, cross-document, hard, unanswerable, and multi-turn categories. Validated by atlas_evals.models.GoldenDataset.",
+  "verification": "Expected documents and page ranges were derived from the ACTUAL ingested corpus — never invented. Each new entry was grounded read-only against the running Postgres/pgvector store: the chunk table's full-text index (websearch_to_tsquery + ts_rank_cd, the same keyword-search leg the app uses) and article-heading lookups were used to locate the operative provision, and expected_pages come from those chunks' start_page/end_page. Where the exact operative page vs. an adjacent recital could not be cleanly isolated, the entry's notes say so and the range covers the verified region; the CONFIDENCE tag in notes records how firm each page range is.",
+  "questions": [
+    {
+      "id": "mg-01-keyword-dpo",
+      "question": "What are the tasks of the data protection officer?",
+      "category": "keyword",
+      "expected_documents": ["gdpr.pdf"],
+      "expected_pages": [{ "from": 55, "to": 56 }],
+      "notes": "Keyword-heavy: the distinctive phrase 'data protection officer' and 'tasks' appear verbatim in GDPR Art 37-39 (pp. 55-56), so websearch_to_tsquery matches and keyword search ranks GDPR at #1 — as do vector and hybrid. Guards against a chunking/RRF change silently regressing exact-term retrieval."
+    },
+    {
+      "id": "mg-02-semantic-digital-content-remedies",
+      "question": "If software or a streaming service I paid for does not work as advertised, what can I demand from the trader?",
+      "category": "semantic",
+      "expected_documents": ["digital-content-directive.pdf"],
+      "expected_pages": [{ "from": 22, "to": 25 }],
+      "notes": "Semantic paraphrase: the colloquial wording ('doesn't work as advertised', 'demand from the trader') shares almost no rare terms with the legal text ('conformity', 'remedies', Art 14, remedies pp. 22-25; conformity basis ~p. 13), so keyword search misses entirely while vector returns the Digital Content Directive across the whole top-5. The clearest vector-beats-keyword case in the set."
+    },
+    {
+      "id": "mg-03-cross-document-incident-notification",
+      "question": "How quickly must an essential-services operator notify authorities after a serious security incident?",
+      "category": "cross-document",
+      "expected_documents": ["nis2.pdf"],
+      "expected_pages": [{ "from": 49, "to": 51 }],
+      "notes": "Incident-notification timelines appear across several cybersecurity instruments. NIS2 (Art 23, 24h early warning / 72h notification, pp. 49-51) is the primary/current source; nis1.pdf (the predecessor, ~pp. 20-22) is an acceptable secondary, and dora.pdf / cra.pdf carry ICT- and product-specific reporting. expected_document is the primary — Phase 4 should credit all acceptable sources."
+    },
+    {
+      "id": "mg-04-hard-mica-art-white-paper",
+      "question": "What must the crypto-asset white paper for an asset-referenced token contain?",
+      "category": "hard",
+      "expected_documents": ["mica.pdf"],
+      "expected_pages": [{ "from": 41, "to": 48 }],
+      "notes": "Hard: precise MiCA jargon ('asset-referenced token', 'crypto-asset white paper') buried in a 166-page document, and the full-sentence phrasing defeats keyword search (all content words must co-occur in one chunk). Vector and hybrid rank MiCA #1; keyword returns nothing. Exercises retrieval precision on the largest document (further detail lives in annexes ~pp. 148-153)."
+    },
+    {
+      "id": "mg-05-unanswerable-water-intake",
+      "question": "What is the recommended daily amount of water an adult should drink?",
+      "category": "unanswerable",
+      "expected_documents": [],
+      "expected_pages": [],
+      "notes": "Out-of-corpus (health/nutrition, not EU digital regulation). The top vector score should be low (~0.2 observed) versus ~0.77 for answerable questions — the signal a Phase 4 abstention check would threshold on. Note: topically-adjacent unanswerables (e.g. US HIPAA/CCPA) score higher (~0.5) because the corpus's US adequacy decisions overlap, so this seed deliberately uses a clean off-domain case."
+    },
+    {
+      "id": "mg-06-hard-aiact-high-risk",
+      "question": "What does the AI Act consider a high-risk AI system?",
+      "category": "hard",
+      "expected_documents": ["ai-act.pdf"],
+      "expected_pages": [14, 53, 54, 55, 56],
+      "expected_chunk_indexes": [38, 138, 139, 141, 142],
+      "notes": "Known-hard query that exists to permanently track a fusion behaviour. The Article 6 high-risk classification chunks are indexes 38 (p. 14, classifying recital), 138 (pp. 53-54), and 139/141/142 (pp. 54-56). CORRECTION (verified via GET /api/chunks): index 138 is a DEFINITIONAL chunk — it contains Article 6(1)-(3), the classification test itself. It merely OPENS with the tail of Article 5 (annual reporting on real-time remote biometric identification), which is all its 300-char snippet shows; an earlier analysis mistook the snippet for the whole chunk and wrongly labelled 138 a term-dense distractor. Vector correctly ranks 138 #1. Keyword's AND-semantics never surface it, so it appears in the vector list only; hybrid RRF therefore demotes it out of the top 5. That is a mild fusion cost, not a win: hybrid's top 4 are still the other Article-6 chunks (38, 142, 139, 141). Expected chunk indexes for page-level matching: 138 joins 38/139/141/142."
+    },
+
+    {
+      "id": "dg-k01-keyword-gdpr-erasure",
+      "question": "What is the right to erasure under the GDPR?",
+      "category": "keyword",
+      "expected_documents": ["gdpr.pdf"],
+      "expected_pages": [{ "from": 43, "to": 44 }],
+      "expected_chunk_indexes": [95],
+      "notes": "Why: exercises exact-term retrieval of a named GDPR right ('right to erasure' / 'right to be forgotten', Art 17). Verified: FTS-ranked gdpr.pdf for 'right to erasure without undue delay' -> top chunk index 95 (pp. 43-44), whose content is the Art 17 operative text. CONFIDENCE: high."
+    },
+    {
+      "id": "dg-k02-keyword-cra-ce-marking",
+      "question": "What are the rules for affixing the CE marking to a product with digital elements?",
+      "category": "keyword",
+      "expected_documents": ["cra.pdf"],
+      "expected_pages": [{ "from": 47, "to": 48 }],
+      "expected_chunk_indexes": [113, 114],
+      "notes": "Why: 'CE marking' is a distinctive term keyword search should nail. Verified: heading lookup in cra.pdf found chunk 114 (p. 48) containing 'Article 30 Rules ... for affixing the CE marking' preceded by the conformity-assessment obligation in chunk 113 (pp. 47-48). CONFIDENCE: high."
+    },
+    {
+      "id": "dg-k03-keyword-dsa-statement-of-reasons",
+      "question": "What is a statement of reasons under the Digital Services Act?",
+      "category": "keyword",
+      "expected_documents": ["dsa.pdf"],
+      "expected_pages": [{ "from": 50, "to": 52 }],
+      "expected_chunk_indexes": [111, 112, 113],
+      "notes": "Why: 'statement of reasons' is DSA-specific terminology (Art 17) sitting alongside notice-and-action (Art 16). Verified: heading/phrase lookup in dsa.pdf located the operative provisions in chunks 111-113 (pp. 50-52). CONFIDENCE: high."
+    },
+    {
+      "id": "dg-k04-keyword-dma-gatekeeper",
+      "question": "When is an undertaking designated as a gatekeeper under the Digital Markets Act?",
+      "category": "keyword",
+      "expected_documents": ["dma.pdf"],
+      "expected_pages": [{ "from": 30, "to": 31 }],
+      "notes": "Why: 'gatekeeper' + 'designated' is the DMA's signature term (Art 3). Verified: FTS-ranked dma.pdf for the designation thresholds -> operative cluster at chunks 66-68 (pp. 30-31, the quantitative-threshold presumptions). CONFIDENCE: medium — document certain; the designation criteria also restate in nearby recitals, so the exact operative page may extend a page either side."
+    },
+    {
+      "id": "dg-k05-keyword-eidas-wallet",
+      "question": "What is the European Digital Identity Wallet?",
+      "category": "keyword",
+      "expected_documents": ["eidas2.pdf"],
+      "expected_pages": [{ "from": 40, "to": 42 }],
+      "notes": "Why: 'European Digital Identity Wallet' is the defining term of the eIDAS2 amendment. Verified: FTS-ranked eidas2.pdf -> densest wallet-provisioning cluster at chunks 81-83 (pp. 40-42). CONFIDENCE: medium — eIDAS2's inserted-article numbering (Art 5a etc.) is intricate; the term is also defined earlier (Art 3, ~p. 6), so retrieval to the p. 6 definition should also count."
+    },
+    {
+      "id": "dg-k06-keyword-cybersecurity-certificate",
+      "question": "What are the assurance levels of a European cybersecurity certificate?",
+      "category": "keyword",
+      "expected_documents": ["cybersecurity-act.pdf"],
+      "expected_pages": [42, 43],
+      "expected_chunk_indexes": [83],
+      "notes": "Why: 'assurance level' ('basic'/'substantial'/'high') is precise Cybersecurity Act terminology. Verified: FTS-ranked cybersecurity-act.pdf for 'European cybersecurity certificate assurance level' -> top chunk 83 (pp. 42-43) stating the three levels. CONFIDENCE: high."
+    },
+    {
+      "id": "dg-k07-keyword-p2b-suspension",
+      "question": "What must an online intermediation service do when it suspends or terminates a business user's account?",
+      "category": "keyword",
+      "expected_documents": ["p2b-regulation.pdf"],
+      "expected_pages": [14, 15],
+      "expected_chunk_indexes": [33],
+      "notes": "Why: the P2B Regulation's 'restriction, suspension and termination' rules (Art 4) with a statement of reasons. Verified: phrase lookup in p2b-regulation.pdf -> operative chunk 33 (pp. 14-15). CONFIDENCE: high."
+    },
+
+    {
+      "id": "dg-s01-semantic-gdpr-portability",
+      "question": "Can I get a copy of my data from one service in a reusable format and move it to a competitor?",
+      "category": "semantic",
+      "expected_documents": ["gdpr.pdf"],
+      "expected_pages": [44, 45],
+      "expected_chunk_indexes": [97, 98],
+      "notes": "Why: colloquial paraphrase of the right to data portability (GDPR Art 20) with no legal terms in the query. Verified: 'machine-readable format' (the exact Art 20(1) phrase) occurs only in chunk 98 (p. 45), with the lead-in on chunk 97 (pp. 44-45). CONFIDENCE: high."
+    },
+    {
+      "id": "dg-s02-semantic-data-act-switching",
+      "question": "I'm unhappy with my cloud provider — can I move my data and applications to a competing service, and who pays?",
+      "category": "semantic",
+      "expected_documents": ["data-act.pdf"],
+      "expected_pages": [{ "from": 23, "to": 26 }],
+      "expected_chunk_indexes": [56, 60, 61],
+      "notes": "Why: everyday phrasing of the Data Act's 'switching between data processing services' chapter. Verified: FTS-ranked data-act.pdf -> strong operative cluster at chunks 56, 60, 61 (pp. 23-26, switching obligations and charges). CONFIDENCE: high (highest FTS ranks in the set)."
+    },
+    {
+      "id": "dg-s03-semantic-eprivacy-cookies",
+      "question": "Does a website need my permission before storing cookies on my device?",
+      "category": "semantic",
+      "expected_documents": ["eprivacy-directive.pdf"],
+      "expected_pages": [5, 6],
+      "notes": "Why: lay phrasing of the ePrivacy consent-for-terminal-equipment rule (Art 5(3)). Verified: 'terminal equipment' + cookie consent language clusters in chunk 13 (pp. 5-6) of the 11-page directive. CONFIDENCE: medium — the operative Art 5(3) and its recital 25 are close together on pp. 3-6, so exact page may be p. 5 vs p. 6."
+    },
+    {
+      "id": "dg-s04-semantic-nis2-risk-measures",
+      "question": "What does a company have to do to manage its cybersecurity risks under the new EU rules?",
+      "category": "semantic",
+      "expected_documents": ["nis2.pdf"],
+      "expected_pages": [{ "from": 16, "to": 18 }],
+      "notes": "Why: paraphrase of NIS2's cybersecurity risk-management measures (Art 21) — distinct from the incident-notification timeline in mg-03. Verified: FTS-ranked nis2.pdf for 'cybersecurity risk-management measures essential entities' -> cluster at chunks 34-37 (pp. 16-18). CONFIDENCE: medium — this region includes both the measures and their framing recitals; the numbered Art 21 list may extend slightly beyond p. 18."
+    },
+    {
+      "id": "dg-s05-semantic-accessibility-ecommerce",
+      "question": "Do online shops have to be usable by blind and partially sighted people?",
+      "category": "semantic",
+      "expected_documents": ["accessibility-act.pdf"],
+      "expected_pages": [34, 35],
+      "notes": "Why: everyday phrasing of the European Accessibility Act's accessibility requirements for e-commerce services. Verified: FTS-ranked accessibility-act.pdf for e-commerce accessibility -> chunk 71 (pp. 34-35, functional accessibility requirements). CONFIDENCE: low — FLAGGED: the Act structures requirements across the body and Annex I, so the exact operative page is approximate; the document is certain."
+    },
+    {
+      "id": "dg-s06-semantic-avmsd-minors",
+      "question": "Are video-sharing platforms required to protect children from harmful videos?",
+      "category": "semantic",
+      "expected_documents": ["avmsd-amendment.pdf"],
+      "expected_pages": [7, 8],
+      "notes": "Why: paraphrase of the AVMSD amendment's duty on video-sharing platforms to protect minors (Art 28b). Verified: FTS-ranked avmsd-amendment.pdf for 'video-sharing platforms protect minors' -> chunk 18 (p. 8) plus recital framing on p. 2. CONFIDENCE: low — FLAGGED: the operative Art 28b measures and their recitals are spread across the short amendment; page range is approximate, document certain."
+    },
+    {
+      "id": "dg-s07-semantic-dsm-text-and-data-mining",
+      "question": "Can researchers automatically analyse large amounts of copyrighted text and data for a study?",
+      "category": "semantic",
+      "expected_documents": ["dsm-copyright-directive.pdf"],
+      "expected_pages": [{ "from": 3, "to": 5 }],
+      "notes": "Why: paraphrase of the DSM Copyright Directive's text-and-data-mining exception for research (Arts 3-4). Verified: FTS-ranked dsm-copyright-directive.pdf for 'text and data mining research organisations' -> TDM discussion clusters at chunks 5-9 (pp. 2-5). CONFIDENCE: low — FLAGGED: top-ranked chunks are the TDM recitals (8-14); the numbered Arts 3-4 operative text may sit a page or two later, so the range is approximate."
+    },
+
+    {
+      "id": "dg-x01-cross-international-transfers",
+      "question": "What rules govern sending personal data to companies outside the EU?",
+      "category": "cross-document",
+      "expected_documents": ["gdpr.pdf", "scc-decision.pdf"],
+      "expected_pages": [{ "from": 61, "to": 64 }],
+      "notes": "Why: international transfers span the GDPR's Chapter V (Arts 44-49) and the Commission's Standard Contractual Clauses decision (the SCC instrument itself). Verified: FTS-ranked gdpr.pdf for third-country transfer safeguards -> Chapter V cluster at chunks 128-133 (pp. 61-64); scc-decision.pdf is the whole SCC instrument (clauses near pp. 6-7, chunk 14). expected_pages are the GDPR primary region; scc-decision is credited at document level. CONFIDENCE: medium — GDPR pages firm; SCC page-level location approximate (whole document is on-topic)."
+    },
+    {
+      "id": "dg-x02-cross-cybersecurity-certification",
+      "question": "How can a product or service get certified as cybersecure under EU law?",
+      "category": "cross-document",
+      "expected_documents": ["cybersecurity-act.pdf", "cra.pdf"],
+      "expected_pages": [42, 43],
+      "notes": "Why: EU cybersecurity certification is defined by the Cybersecurity Act's certification framework (primary) and referenced by the Cyber Resilience Act's conformity route for products. Verified: cybersecurity-act.pdf certificate/assurance-level provisions at chunk 83 (pp. 42-43, same operative text as dg-k06); cra.pdf conformity assessment (~pp. 47-48) is the secondary. expected_pages are the primary; cra credited at document level. CONFIDENCE: medium."
+    },
+    {
+      "id": "dg-x03-cross-data-switching-porting",
+      "question": "What EU rules let me move my data and workloads between different service providers?",
+      "category": "cross-document",
+      "expected_documents": ["data-act.pdf", "free-flow-non-personal-data.pdf"],
+      "expected_pages": [{ "from": 23, "to": 26 }],
+      "notes": "Why: portability/switching spans the Data Act's switching chapter (primary) and the Free Flow of Non-Personal Data Regulation's porting/self-regulatory codes. Verified: data-act.pdf switching cluster at chunks 56/60/61 (pp. 23-26, same as dg-s02); free-flow-non-personal-data.pdf (10-page regulation) is the secondary. expected_pages are the primary; free-flow credited at document level. CONFIDENCE: high (primary)."
+    },
+    {
+      "id": "dg-x04-cross-public-data-reuse",
+      "question": "What rules govern re-using data held by the public sector?",
+      "category": "cross-document",
+      "expected_documents": ["open-data-directive.pdf", "dga.pdf"],
+      "expected_pages": [8, 9],
+      "notes": "Why: re-use of public-sector information is governed by the Open Data Directive (primary) and, for protected categories, the Data Governance Act. Verified: FTS-ranked open-data-directive.pdf for 're-use of documents' -> chunks 19-21 (pp. 8-9); dga.pdf re-use-of-protected-data provisions are the secondary. expected_pages are the primary; dga credited at document level. CONFIDENCE: medium — open-data region includes recitals framing the general principle; document certain."
+    },
+
+    {
+      "id": "dg-h01-hard-dora-tlpt",
+      "question": "How often must a financial entity carry out threat-led penetration testing under DORA?",
+      "category": "hard",
+      "expected_documents": ["dora.pdf"],
+      "expected_pages": [45, 46],
+      "expected_chunk_indexes": [93, 94],
+      "notes": "Why: 'threat-led penetration testing' (TLPT, Arts 26-27) is precise jargon buried in a 79-page regulation; full-sentence phrasing defeats keyword AND-semantics. Verified: operative TLPT provisions at chunks 93-94 (pp. 45-46, 'penetration testing ... TLPT ... financial entity') — distinct from the earlier recital mention (p. 11). CONFIDENCE: high."
+    },
+    {
+      "id": "dg-h02-hard-dsa-crisis-mechanism",
+      "question": "What is the crisis response mechanism for very large online platforms?",
+      "category": "hard",
+      "expected_documents": ["dsa.pdf"],
+      "expected_pages": [{ "from": 65, "to": 67 }],
+      "expected_chunk_indexes": [137, 138],
+      "notes": "Why: the DSA 'crisis response mechanism' (Art 36) is a narrow VLOP provision easily confused with risk-assessment/mitigation articles. Verified: operative provision at chunks 137-138 (pp. 65-67). CONFIDENCE: high."
+    },
+
+    {
+      "id": "dg-u01-unanswerable-hipaa",
+      "question": "What does HIPAA require for protecting patient health records in the United States?",
+      "category": "unanswerable",
+      "expected_documents": [],
+      "expected_pages": [],
+      "notes": "Why: the topically-ADJACENT unanswerable (like the water-intake note's HIPAA caveat) — US health-privacy law, not EU digital regulation. Verified: 'HIPAA' appears only incidentally (3 chunks, all in adequacy-us-dpf.pdf) and the corpus contains none of HIPAA's requirements, so it is genuinely unanswerable while retrieval may surface US-privacy-adjacent chunks at moderate scores. Exercises abstention against a near-miss."
+    },
+    {
+      "id": "dg-u02-unanswerable-ccpa",
+      "question": "What are the requirements of the California Consumer Privacy Act for selling personal information?",
+      "category": "unanswerable",
+      "expected_documents": [],
+      "expected_pages": [],
+      "notes": "Why: a second topically-ADJACENT unanswerable — US state privacy law. Verified: no chunk contains the California Consumer Privacy Act's provisions (only incidental US-privacy context in the adequacy decisions). Complements dg-u01 and mg-05 (clean off-domain) to cover the distant/adjacent spectrum for abstention."
+    },
+
+    {
+      "id": "dg-m01-multiturn-dpo-appointment",
+      "question": "And who is actually required to appoint one?",
+      "category": "multi-turn",
+      "expected_documents": ["gdpr.pdf"],
+      "expected_pages": [54, 55],
+      "expected_chunk_indexes": [114, 115],
+      "notes": "Why: tests coreference across turns — 'one' resolves to the data protection officer from the setup turn; the follow-up targets the DPO DESIGNATION rule (Art 37), not the tasks (Art 39). Verified: 'shall designate a data protection officer' operative text in chunks 114-115 (pp. 54-55). CONFIDENCE: high. Depends on conversation history being replayed.",
+      "setup_turns": [
+        { "question": "What are the tasks of the data protection officer?" }
+      ]
+    },
+    {
+      "id": "dg-m02-multiturn-highrisk-provider-obligations",
+      "question": "What obligations does its provider have?",
+      "category": "multi-turn",
+      "expected_documents": ["ai-act.pdf"],
+      "expected_pages": [{ "from": 61, "to": 63 }],
+      "notes": "Why: 'its provider' resolves to the provider of a high-risk AI system from the setup turn; targets the AI Act's obligations of providers of high-risk systems (Chapter III, Section 3). Verified: FTS-ranked ai-act.pdf for provider obligations -> cluster at chunks 154-156 (pp. 61-63). CONFIDENCE: medium — the provider-obligation articles span several pages; range covers the verified cluster. Depends on conversation history being replayed.",
+      "setup_turns": [
+        { "question": "What does the AI Act consider a high-risk AI system?" }
+      ]
+    }
+  ]
+}
