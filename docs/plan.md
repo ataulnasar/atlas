@@ -837,7 +837,13 @@ Write and implement a RAG prompt template for Atlas. Require context-only answer
 
 **Definition of Done:** Answers include citation markers and avoid unsupported claims.
 
-### Persist conversation history — 3h
+### Persist conversation history — 3h  ✅ Done
+
+> **Done.** The write path (user/assistant messages, seq ordering, citations JSONB, `updated_at`
+> touch) landed with the V5 schema and `TurnPersistence` in the chat-schema and chat-endpoint cards;
+> verified against the running stack (contiguous seq, alternating roles, assistant citations JSONB).
+> The remaining gap — a read-back API — was added here as `GET /api/conversations/{id}`. A
+> conversation-*list* endpoint stays out of v1 (no per-user ownership model yet).
 
 **Priority:** Medium  
 **Labels:** chat,database
@@ -860,7 +866,13 @@ Implement conversation history persistence for Atlas chat. Save user messages, a
 
 **Definition of Done:** Conversation history can be reloaded.
 
-### Add token and cost logging — 3h
+### Add token and cost logging — 3h  ✅ Done
+
+> **Done.** Per-request token usage + latency breakdown are logged at INFO in `ChatService.finish`
+> (shared by both the sync and streaming endpoints), landed with the chat-endpoint card. The gap —
+> an approximate USD cost — was added here: `atlas.generation.cost` price properties (defaulting to
+> gpt-5-mini's published rates, config not fetched) and `estCostUsd` in the INFO line, from real
+> usage. Cost math is a pure, unit-tested function.
 
 **Priority:** Medium  
 **Labels:** cost,ai

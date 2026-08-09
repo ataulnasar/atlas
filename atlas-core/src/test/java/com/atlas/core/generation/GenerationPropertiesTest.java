@@ -48,4 +48,36 @@ class GenerationPropertiesTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("history-turns");
   }
+
+  @Test
+  void defaultCostAppliesGpt5MiniPublishedRates() {
+    GenerationProperties.Cost cost = new GenerationProperties("gpt-5-mini", 0.1, 6000, 3).cost();
+    assertThat(cost.inputPricePerMillionTokens()).isEqualTo(0.25);
+    assertThat(cost.outputPricePerMillionTokens()).isEqualTo(2.00);
+  }
+
+  @Test
+  void estimateUsdIsInputAndOutputPricedSeparatelyPerMillionTokens() {
+    GenerationProperties.Cost cost = new GenerationProperties.Cost(0.25, 2.00);
+
+    // One million of each: exactly the two per-million prices summed.
+    assertThat(cost.estimateUsd(1_000_000, 1_000_000)).isEqualTo(2.25);
+    // A realistic request: 3779 in, 146 out -> 3779*0.25/1e6 + 146*2.00/1e6.
+    assertThat(cost.estimateUsd(3779, 146))
+        .isEqualTo(0.00123675, org.assertj.core.data.Offset.offset(1e-9));
+  }
+
+  @Test
+  void estimateUsdTreatsNullTokenCountsAsZero() {
+    GenerationProperties.Cost cost = new GenerationProperties.Cost(0.25, 2.00);
+    assertThat(cost.estimateUsd(null, null)).isEqualTo(0.0);
+    assertThat(cost.estimateUsd(1_000_000, null)).isEqualTo(0.25);
+  }
+
+  @Test
+  void rejectsNegativeCostPrices() {
+    assertThatThrownBy(() -> new GenerationProperties.Cost(-0.1, 2.00))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("cost");
+  }
 }

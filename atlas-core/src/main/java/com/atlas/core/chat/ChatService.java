@@ -184,11 +184,15 @@ class ChatService {
             generation.totalTokens(),
             generation.model() != null ? generation.model() : generationProperties.model());
 
+    // Approximate USD cost from real usage and configured token prices (config, not fetched).
+    double estCostUsd =
+        generationProperties.cost().estimateUsd(usage.promptTokens(), usage.completionTokens());
+
     // One INFO line per request; answer content only at DEBUG.
     log.info(
         "chat conversationId={} retrievalMode={} retrieved={} contextChunks={} citations={} "
             + "latencyMs[retrieve={} assemble={} generate={}] "
-            + "tokens[prompt={} completion={} total={}]",
+            + "tokens[prompt={} completion={} total={}] estCostUsd={}",
         conversationId,
         context.retrievalMode(),
         context.retrievedCount(),
@@ -199,7 +203,8 @@ class ChatService {
         millis(generateNanos),
         usage.promptTokens(),
         usage.completionTokens(),
-        usage.totalTokens());
+        usage.totalTokens(),
+        String.format(java.util.Locale.ROOT, "%.6f", estCostUsd));
     if (log.isDebugEnabled()) {
       log.debug("chat conversationId={} answer={}", conversationId, answer);
     }

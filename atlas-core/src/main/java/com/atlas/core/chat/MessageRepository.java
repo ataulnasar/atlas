@@ -70,6 +70,16 @@ class MessageRepository {
     return jdbcTemplate.query(sql, params, this::mapRow);
   }
 
+  /** Every message of a conversation, oldest first ({@code seq} ascending) — the read-back path. */
+  List<ChatMessage> findByConversationId(UUID conversationId) {
+    String sql =
+        "SELECT id, conversation_id, seq, role, content, citations, created_at "
+            + "FROM message WHERE conversation_id = :conversationId ORDER BY seq ASC";
+    MapSqlParameterSource params =
+        new MapSqlParameterSource().addValue("conversationId", conversationId);
+    return jdbcTemplate.query(sql, params, this::mapRow);
+  }
+
   private ChatMessage mapRow(ResultSet rs, int rowNum) throws SQLException {
     String citationsJson = rs.getString("citations");
     return new ChatMessage(
