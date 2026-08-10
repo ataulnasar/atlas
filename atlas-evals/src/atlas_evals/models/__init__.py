@@ -5,6 +5,7 @@
 """
 
 from atlas_evals.models.api import (
+    AdminStatsResponse,
     ApiErrorBody,
     ChatRequest,
     ChatResponse,
@@ -15,6 +16,7 @@ from atlas_evals.models.api import (
     ConversationResponse,
     DocumentStatus,
     DocumentStatusResponse,
+    HealthResponse,
     HybridSearchHit,
     HybridSearchResponse,
     SearchFilter,
@@ -40,6 +42,7 @@ __all__ = [
     "SetupTurn",
     "load_datasets",
     # api contract
+    "AdminStatsResponse",
     "ApiErrorBody",
     "ChatRequest",
     "ChatResponse",
@@ -50,6 +53,7 @@ __all__ = [
     "ConversationResponse",
     "DocumentStatus",
     "DocumentStatusResponse",
+    "HealthResponse",
     "HybridSearchHit",
     "HybridSearchResponse",
     "SearchFilter",

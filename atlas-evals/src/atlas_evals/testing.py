@@ -23,6 +23,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from uuid import UUID
 
 from atlas_evals.models.api import (
+    AdminStatsResponse,
     ChatResponse,
     ChatUsage,
     Citation,
@@ -46,6 +47,10 @@ class Canned:
 
     search: dict[tuple[str, str], JsonDict]
     chat: dict[str, JsonDict]
+    # Diagnostics (atlas-eval doctor): GET /api/admin/stats, and a valid default chat reply for
+    # any question not in the dataset (e.g. the doctor's generation probe).
+    stats: JsonDict
+    default_chat: JsonDict
 
 
 def _citation(doc: str, start: int, end: int) -> Citation:
@@ -130,7 +135,17 @@ def build_canned(dataset: GoldenDataset) -> Canned:
             citations=[_citation(doc, start, end)], retrieval_mode="hybrid", usage=_usage(),
         ).model_dump(by_alias=True, mode="json")
 
-    return Canned(search=search, chat=chat)
+    docs = {q.expected_documents[0] for q in dataset.questions if q.expected_documents}
+    stats = AdminStatsResponse(
+        total_documents=len(docs), ready_documents=len(docs),
+        total_chunks=len(docs) * 10, chunks_without_embedding=0,
+    ).model_dump(by_alias=True, mode="json")
+    default_chat = ChatResponse(
+        conversation_id=_FIXED_ID, answer="pong", citations=[],
+        retrieval_mode="vector", usage=_usage(),
+    ).model_dump(by_alias=True, mode="json")
+
+    return Canned(search=search, chat=chat, stats=stats, default_chat=default_chat)
 
 
 def _usage() -> ChatUsage:
@@ -144,6 +159,15 @@ class _MockServer(ThreadingHTTPServer):
 
 
 class _Handler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:  # noqa: N802 (BaseHTTPRequestHandler API)
+        assert isinstance(self.server, _MockServer)
+        if self.path.endswith("/actuator/health"):
+            self._write_json({"status": "UP"})
+        elif self.path.endswith("/api/admin/stats"):
+            self._write_json(self.server.canned.stats)
+        else:
+            self.send_error(404, "unknown endpoint")
+
     def do_POST(self) -> None:  # noqa: N802 (BaseHTTPRequestHandler API)
         assert isinstance(self.server, _MockServer)
         length = int(self.headers.get("Content-Length") or 0)
@@ -152,7 +176,8 @@ class _Handler(BaseHTTPRequestHandler):
 
         if self.path.endswith("/api/chat"):
             question = str(body.get("question", ""))
-            payload = canned.chat.get(question, {"error": "no canned response"})
+            # Unknown questions (e.g. the doctor's generation probe) get a valid default reply.
+            payload = canned.chat.get(question, canned.default_chat)
         elif "/api/search/" in self.path:
             engine = self.path.rstrip("/").rsplit("/", 1)[-1]
             payload = canned.search.get(
@@ -162,6 +187,9 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_error(404, "unknown endpoint")
             return
 
+        self._write_json(payload)
+
+    def _write_json(self, payload: JsonDict) -> None:
         data = json.dumps(payload).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")

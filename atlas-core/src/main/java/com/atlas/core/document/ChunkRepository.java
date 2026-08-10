@@ -217,6 +217,27 @@ class ChunkRepository {
     return count != null ? count : 0;
   }
 
+  /** Total number of chunks — diagnostics only (see AdminStatsController). */
+  long count() {
+    Long count =
+        jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM chunk", new MapSqlParameterSource(), Long.class);
+    return count != null ? count : 0L;
+  }
+
+  /**
+   * Number of chunks still awaiting an embedding ({@code embedding IS NULL}) — diagnostics only. A
+   * nonzero value means a backfill is incomplete or in progress (see AdminStatsController).
+   */
+  long countWithoutEmbedding() {
+    Long count =
+        jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM chunk WHERE embedding IS NULL",
+            new MapSqlParameterSource(),
+            Long.class);
+    return count != null ? count : 0L;
+  }
+
   private static final RowMapper<ChunkView> CHUNK_VIEW_MAPPER =
       (rs, rowNum) ->
           new ChunkView(

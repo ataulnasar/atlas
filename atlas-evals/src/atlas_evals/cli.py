@@ -5,6 +5,7 @@ Run ``atlas-eval --help`` (or ``uv run atlas-eval --help``) for usage.
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from atlas_evals import __version__
 from atlas_evals.client import AtlasClient
 from atlas_evals.compare import DEFAULT_TOLERANCE, compare_runs
 from atlas_evals.compare import render_markdown as render_compare_markdown
+from atlas_evals.doctor import Status, has_failure, render, run_checks
 from atlas_evals.models.golden import GoldenDataset
 from atlas_evals.report import render_html, render_markdown
 from atlas_evals.results import RunResults
@@ -183,6 +185,34 @@ def compare(
         raise typer.Exit(code=2)
     if comparison.has_gated_regression():
         typer.echo("regression detected beyond tolerance", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def doctor(
+    base_url: str = typer.Option(
+        "http://localhost:8080", "--base-url", help="Base URL of the Atlas instance."
+    ),
+    fix_hints: bool = typer.Option(
+        False, "--fix-hints", help="Print a remediation hint under each non-PASS check."
+    ),
+) -> None:
+    """Diagnose a deployment: env keys, reachability, auth, corpus state, and generation."""
+    # Read verdicts from the same env the client authenticates with; never print the values.
+    atlas_api_key = os.environ.get("ATLAS_API_KEY")
+    openai_api_key = os.environ.get("SPRING_AI_OPENAI_API_KEY")
+    with AtlasClient(base_url=base_url) as client:
+        checks = run_checks(client, atlas_api_key=atlas_api_key, openai_api_key=openai_api_key)
+
+    for line in render(checks, fix_hints=fix_hints):
+        typer.echo(line)
+    passed = sum(c.status is Status.PASS for c in checks)
+    warned = sum(c.status is Status.WARN for c in checks)
+    failed = sum(c.status is Status.FAIL for c in checks)
+    typer.echo(f"\n{passed} passed, {warned} warning(s), {failed} failed.")
+    if not fix_hints and (warned or failed):
+        typer.echo("Re-run with --fix-hints for remediation steps.")
+    if has_failure(checks):
         raise typer.Exit(code=1)
 
 

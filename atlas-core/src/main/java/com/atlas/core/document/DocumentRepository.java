@@ -52,6 +52,26 @@ class DocumentRepository {
     return jdbcTemplate.queryForObject(sql, params, ROW_MAPPER);
   }
 
+  /**
+   * Total number of documents, across all statuses — diagnostics only (see AdminStatsController).
+   */
+  long count() {
+    Long count =
+        jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM document", new MapSqlParameterSource(), Long.class);
+    return count != null ? count : 0L;
+  }
+
+  /** Number of documents in the given status — diagnostics only (see AdminStatsController). */
+  long countByStatus(DocumentStatus status) {
+    Long count =
+        jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM document WHERE status = :status",
+            new MapSqlParameterSource().addValue("status", status.name()),
+            Long.class);
+    return count != null ? count : 0L;
+  }
+
   Optional<Document> findByContentHash(String contentHash) {
     String sql = "SELECT " + SELECT_COLUMNS + " FROM document WHERE content_hash = :contentHash";
     MapSqlParameterSource params = new MapSqlParameterSource().addValue("contentHash", contentHash);

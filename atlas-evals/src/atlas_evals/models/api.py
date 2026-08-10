@@ -163,3 +163,21 @@ class ChatRequest(CamelModel):
     question: str
     conversation_id: UUID | None = None
     top_k: int | None = None
+
+
+# --- diagnostics (atlas-eval doctor) -------------------------------------------------------------
+
+
+class HealthResponse(CamelModel):
+    """Spring Boot Actuator health body (``GET /actuator/health``): ``{"status": "UP"}``."""
+
+    status: str
+
+
+class AdminStatsResponse(CamelModel):
+    """Corpus counts from ``GET /api/admin/stats`` (mirrors the Java ``AdminStatsResponse``)."""
+
+    total_documents: int
+    ready_documents: int
+    total_chunks: int
+    chunks_without_embedding: int

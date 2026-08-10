@@ -19,11 +19,13 @@ from pydantic import BaseModel
 
 from atlas_evals.errors import AtlasApiError
 from atlas_evals.models.api import (
+    AdminStatsResponse,
     ChatRequest,
     ChatResponse,
     ChunkView,
     ConversationResponse,
     DocumentStatusResponse,
+    HealthResponse,
     HybridSearchResponse,
     SearchFilter,
     SearchRequest,
@@ -116,6 +118,16 @@ class AtlasClient:
             by_alias=True, exclude_none=True, mode="json"
         )
         return self._post(f"/api/search/{mode}", payload, model)
+
+    # --- diagnostics -----------------------------------------------------------------------------
+
+    def health(self) -> HealthResponse:
+        """Actuator health (``GET /actuator/health``) — outside ``/api``, so no key is required."""
+        return self._get("/actuator/health", HealthResponse)
+
+    def get_admin_stats(self) -> AdminStatsResponse:
+        """Corpus counts (``GET /api/admin/stats``) — behind the API key; counts only."""
+        return self._get("/api/admin/stats", AdminStatsResponse)
 
     # --- reads -----------------------------------------------------------------------------------
 
