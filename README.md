@@ -36,16 +36,20 @@ generation, with a Python-based quality bar (`atlas-evals`) and a documented dep
   while the production posture (set the key) is explicit rather than a baked-in default. Not OAuth2 —
   that's v2. See `ApiKeyAuthFilter`.
 - **Pluggable LLM/embedding provider** — abstracted behind a thin client interface in `atlas-core`.
-- **Offline eval suite** (`atlas-evals`) — retrieval precision/recall and answer-faithfulness
-  checks run against golden Q&A datasets, driven from Python against `atlas-core`'s HTTP API.
+- **Offline eval suite** (`atlas-evals`) — deterministic retrieval metrics (doc-hit, page-hit, MRR)
+  and citation-grounding / abstention checks against golden Q&A datasets, plus `report` and
+  `compare` commands, driven from Python against `atlas-core`'s HTTP API. Includes `atlas-eval
+  doctor`, a one-command deployment diagnostic.
 - **Reference deployment** (`atlas-fde/demo-vertical.md`) — the EU digital-regulation knowledge
   assistant, documented as the reference vertical: corpus, measured baseline, demo script, and how
   an FDE clones it for a customer corpus.
 - **FDE playbooks** (`atlas-fde`) — onboarding runbook and deployment checklist template covering
   prerequisites, ingestion, eval sign-off, go-live, and rollback.
-- **Local dev environment** (`docker`) — `docker-compose.yml` to run `atlas-core` and its vector
-  store dependency locally with one command.
-- **CI** — build and test checks for both the Java and Python modules on every push/PR.
+- **Docker deployment** (`docker`) — a one-command local `docker-compose.yml` and a
+  production-leaning `docker-compose.prod.yml` (pinned images, required secrets, healthchecks,
+  nginx-served UI), with an operator [runbook](atlas-fde/runbook.md).
+- **CI** — build, test, and lint/format checks for the Java, Python, and React modules on every
+  push/PR, plus a mock-Atlas eval smoke run and gitleaks secret scanning.
 
 ## What is not in v1
 
@@ -66,17 +70,49 @@ These are explicit non-goals for this release, not oversights — they're candid
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    UI["Chat UI (React)<br/>served by nginx, proxies /api"]
+    Evals["atlas-evals (Python)<br/>external HTTP client"]
+
+    subgraph core["atlas-core — Java / Spring Boot"]
+        Auth["API-key filter — X-API-Key<br/>guards /api/**"]
+
+        subgraph Ingest["Ingestion pipeline"]
+            direction LR
+            P["parse"] --> CU["cleanup"] --> CH["chunk"] --> EM["embed"]
+        end
+
+        subgraph Retrieve["Retrieval"]
+            direction LR
+            VE["vector"] --> RRF["RRF fusion"]
+            KW["keyword"] --> RRF
+        end
+
+        subgraph Chat["Chat — RAG"]
+            direction LR
+            RE["retrieve"] --> AS["assemble"] --> GE["generate"] --> CT["cite"]
+        end
+
+        Auth --> Ingest
+        Auth --> Retrieve
+        Auth --> Chat
+    end
+
+    DB[("PostgreSQL 16 + pgvector<br/>chunks, embeddings, full-text index")]
+    LLM["LLM / embedding provider<br/>(OpenAI)"]
+
+    UI -->|HTTP| Auth
+    Evals -->|"HTTP — ADR 0007 boundary"| Auth
+    Ingest --> DB
+    Retrieve --> DB
+    Chat --> DB
+    EM -. embeddings .-> LLM
+    GE -. completion .-> LLM
 ```
-Source documents
-      |
-      v
- [ingest] --chunk--> [embed] --> [vector store (pgvector) + full-text index (Postgres)]
-                                       |
-User query --embed--> [hybrid retrieve: vector + full-text, fused via RRF] <----+
-      |
-      v
- [generate] --SSE stream + citations--> Chat UI / API client
-```
+
+`atlas-evals` reaches `atlas-core` only over the same public HTTP API as any other client — the
+[ADR 0007](docs/adr/0007-monorepo-http-boundaries.md) boundary that keeps the measurements honest.
 
 - **atlas-core** (Java/Spring Boot) owns the pipeline above, fuses vector and full-text retrieval
   with RRF, streams generation over SSE, and exposes it over an API-key-protected HTTP API.
@@ -217,7 +253,7 @@ The working backlog for getting to v1 itself is tracked in [`docs/plan.md`](docs
 |---------------|----------------------------------------------------------------------|
 | `atlas-core`  | Java/Spring Boot RAG service — ingestion, retrieval, orchestration |
 | `atlas-ui`    | React + Vite chat page — streaming answers with clickable citations  |
-| `atlas-evals` | Python harness for offline/online RAG quality evaluation            |
+| `atlas-evals` | Python harness for offline RAG quality evaluation (metrics + doctor)  |
 | `atlas-fde`   | Forward-deployed engineering playbooks and deployment templates      |
 | `docker`      | Local dev and reference deployment compose files                    |
 | `docs`        | Architecture notes and Architecture Decision Records (ADRs)          |
