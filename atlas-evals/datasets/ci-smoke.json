@@ -1,0 +1,39 @@
+{
+  "dataset": "atlas-ci-smoke",
+  "version": 1,
+  "about": "Tiny 4-question dataset for the CI harness smoke test. It is NOT grounded in the real corpus — it is paired with a deterministic in-process mock Atlas (atlas_evals.testing) so the whole pipeline (run -> results schema -> report -> compare) can be exercised on every PR without an OpenAI key, a running stack, or Docker. One keyword (hits), one semantic (keyword engine misses), one unanswerable (abstains), one designed to miss (retrieval + citation both wrong).",
+  "questions": [
+    {
+      "id": "cs-keyword",
+      "question": "What are the tasks of the data protection officer?",
+      "category": "keyword",
+      "expected_documents": ["gdpr.pdf"],
+      "expected_pages": [{ "from": 55, "to": 56 }],
+      "notes": "Mock returns the expected chunk on all engines -> document + page hit everywhere."
+    },
+    {
+      "id": "cs-semantic",
+      "question": "Can I get a copy of my data in a reusable format and move it to another provider?",
+      "category": "semantic",
+      "expected_documents": ["gdpr.pdf"],
+      "expected_pages": [45],
+      "notes": "Mock returns the expected chunk on vector/hybrid but NOTHING on keyword -> keyword miss (mirrors the real keyword-collapse-on-semantic finding)."
+    },
+    {
+      "id": "cs-unanswerable",
+      "question": "What is the recommended daily amount of water an adult should drink?",
+      "category": "unanswerable",
+      "expected_documents": [],
+      "expected_pages": [],
+      "notes": "Out of the mock world; retrieval is skipped and chat returns no citations -> correct abstention."
+    },
+    {
+      "id": "cs-miss",
+      "question": "What must a crypto-asset white paper for an asset-referenced token contain?",
+      "category": "hard",
+      "expected_documents": ["mica.pdf"],
+      "expected_pages": [41],
+      "notes": "Designed to miss: the mock returns a wrong document for retrieval and cites a wrong document in chat -> document/page miss and a citation-document failure (exercises the failure-evidence path)."
+    }
+  ]
+}

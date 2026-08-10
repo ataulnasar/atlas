@@ -1,0 +1,419 @@
+{
+  "schema_version": 1,
+  "dataset": "atlas-ci-smoke",
+  "base_url": "http://127.0.0.1:57875",
+  "top_k": 5,
+  "engines": [
+    "vector",
+    "keyword",
+    "hybrid",
+    "chat"
+  ],
+  "started_at": "2026-08-10T02:55:01.098150Z",
+  "finished_at": "2026-08-10T02:55:01.107107Z",
+  "questions": [
+    {
+      "id": "cs-keyword",
+      "category": "keyword",
+      "question": "What are the tasks of the data protection officer?",
+      "expected_documents": [
+        "gdpr.pdf"
+      ],
+      "expected_pages": [
+        55,
+        56
+      ],
+      "retrieval": {
+        "vector": {
+          "engine": "vector",
+          "latency_ms": 1.3032919960096478,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "gdpr.pdf",
+              "start_page": 55,
+              "end_page": 56,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": null
+            }
+          ],
+          "metrics": {
+            "document_hit": true,
+            "page_hit": true,
+            "first_relevant_rank": 1,
+            "reciprocal_rank": 1.0
+          }
+        },
+        "keyword": {
+          "engine": "keyword",
+          "latency_ms": 0.7186249713413417,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "gdpr.pdf",
+              "start_page": 55,
+              "end_page": 56,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": null
+            }
+          ],
+          "metrics": {
+            "document_hit": true,
+            "page_hit": true,
+            "first_relevant_rank": 1,
+            "reciprocal_rank": 1.0
+          }
+        },
+        "hybrid": {
+          "engine": "hybrid",
+          "latency_ms": 0.584250024985522,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "gdpr.pdf",
+              "start_page": 55,
+              "end_page": 56,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": "both"
+            }
+          ],
+          "metrics": {
+            "document_hit": true,
+            "page_hit": true,
+            "first_relevant_rank": 1,
+            "reciprocal_rank": 1.0
+          }
+        }
+      },
+      "chat": {
+        "latency_ms": 0.557459017727524,
+        "conversation_id": "00000000-0000-0000-0000-0000000000aa",
+        "answer": "See gdpr.pdf.",
+        "retrieval_mode": "hybrid",
+        "usage": {
+          "prompt_tokens": 100,
+          "completion_tokens": 20,
+          "total_tokens": 120,
+          "model": "gpt-5-mini-ci"
+        },
+        "setup_turns_run": 0,
+        "citations": [
+          {
+            "citation_id": "c1",
+            "document_filename": "gdpr.pdf",
+            "start_page": 55,
+            "end_page": 56,
+            "chunk_id": "00000000-0000-0000-0000-0000000000aa"
+          }
+        ],
+        "metrics": {
+          "answerable": true,
+          "num_citations": 1,
+          "citation_documents_ok": true,
+          "citation_page_hit": true,
+          "abstained": false,
+          "false_abstention": false,
+          "correct_abstention": null
+        }
+      },
+      "errors": []
+    },
+    {
+      "id": "cs-semantic",
+      "category": "semantic",
+      "question": "Can I get a copy of my data in a reusable format and move it to another provider?",
+      "expected_documents": [
+        "gdpr.pdf"
+      ],
+      "expected_pages": [
+        45
+      ],
+      "retrieval": {
+        "vector": {
+          "engine": "vector",
+          "latency_ms": 0.8211249951273203,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "gdpr.pdf",
+              "start_page": 45,
+              "end_page": 45,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": null
+            }
+          ],
+          "metrics": {
+            "document_hit": true,
+            "page_hit": true,
+            "first_relevant_rank": 1,
+            "reciprocal_rank": 1.0
+          }
+        },
+        "keyword": {
+          "engine": "keyword",
+          "latency_ms": 0.8000840316526592,
+          "num_hits": 0,
+          "hits": [],
+          "metrics": {
+            "document_hit": false,
+            "page_hit": false,
+            "first_relevant_rank": null,
+            "reciprocal_rank": 0.0
+          }
+        },
+        "hybrid": {
+          "engine": "hybrid",
+          "latency_ms": 0.5524170119315386,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "gdpr.pdf",
+              "start_page": 45,
+              "end_page": 45,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": "both"
+            }
+          ],
+          "metrics": {
+            "document_hit": true,
+            "page_hit": true,
+            "first_relevant_rank": 1,
+            "reciprocal_rank": 1.0
+          }
+        }
+      },
+      "chat": {
+        "latency_ms": 0.5326669779606164,
+        "conversation_id": "00000000-0000-0000-0000-0000000000aa",
+        "answer": "See gdpr.pdf.",
+        "retrieval_mode": "hybrid",
+        "usage": {
+          "prompt_tokens": 100,
+          "completion_tokens": 20,
+          "total_tokens": 120,
+          "model": "gpt-5-mini-ci"
+        },
+        "setup_turns_run": 0,
+        "citations": [
+          {
+            "citation_id": "c1",
+            "document_filename": "gdpr.pdf",
+            "start_page": 45,
+            "end_page": 45,
+            "chunk_id": "00000000-0000-0000-0000-0000000000aa"
+          }
+        ],
+        "metrics": {
+          "answerable": true,
+          "num_citations": 1,
+          "citation_documents_ok": true,
+          "citation_page_hit": true,
+          "abstained": false,
+          "false_abstention": false,
+          "correct_abstention": null
+        }
+      },
+      "errors": []
+    },
+    {
+      "id": "cs-unanswerable",
+      "category": "unanswerable",
+      "question": "What is the recommended daily amount of water an adult should drink?",
+      "expected_documents": [],
+      "expected_pages": [],
+      "retrieval": {},
+      "chat": {
+        "latency_ms": 0.5472089978866279,
+        "conversation_id": "00000000-0000-0000-0000-0000000000aa",
+        "answer": "The documents do not cover this.",
+        "retrieval_mode": "hybrid",
+        "usage": {
+          "prompt_tokens": 100,
+          "completion_tokens": 20,
+          "total_tokens": 120,
+          "model": "gpt-5-mini-ci"
+        },
+        "setup_turns_run": 0,
+        "citations": [],
+        "metrics": {
+          "answerable": false,
+          "num_citations": 0,
+          "citation_documents_ok": null,
+          "citation_page_hit": null,
+          "abstained": true,
+          "false_abstention": null,
+          "correct_abstention": true
+        }
+      },
+      "errors": []
+    },
+    {
+      "id": "cs-miss",
+      "category": "hard",
+      "question": "What must a crypto-asset white paper for an asset-referenced token contain?",
+      "expected_documents": [
+        "mica.pdf"
+      ],
+      "expected_pages": [
+        41
+      ],
+      "retrieval": {
+        "vector": {
+          "engine": "vector",
+          "latency_ms": 0.5254999850876629,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "wrong.pdf",
+              "start_page": 1,
+              "end_page": 2,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": null
+            }
+          ],
+          "metrics": {
+            "document_hit": false,
+            "page_hit": false,
+            "first_relevant_rank": null,
+            "reciprocal_rank": 0.0
+          }
+        },
+        "keyword": {
+          "engine": "keyword",
+          "latency_ms": 0.5035840440541506,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "wrong.pdf",
+              "start_page": 1,
+              "end_page": 2,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": null
+            }
+          ],
+          "metrics": {
+            "document_hit": false,
+            "page_hit": false,
+            "first_relevant_rank": null,
+            "reciprocal_rank": 0.0
+          }
+        },
+        "hybrid": {
+          "engine": "hybrid",
+          "latency_ms": 0.5224999622441828,
+          "num_hits": 1,
+          "hits": [
+            {
+              "rank": 1,
+              "document_filename": "wrong.pdf",
+              "start_page": 1,
+              "end_page": 2,
+              "chunk_index": 0,
+              "score": 0.9,
+              "found_by": "both"
+            }
+          ],
+          "metrics": {
+            "document_hit": false,
+            "page_hit": false,
+            "first_relevant_rank": null,
+            "reciprocal_rank": 0.0
+          }
+        }
+      },
+      "chat": {
+        "latency_ms": 0.5515000084415078,
+        "conversation_id": "00000000-0000-0000-0000-0000000000aa",
+        "answer": "Off-target answer.",
+        "retrieval_mode": "hybrid",
+        "usage": {
+          "prompt_tokens": 100,
+          "completion_tokens": 20,
+          "total_tokens": 120,
+          "model": "gpt-5-mini-ci"
+        },
+        "setup_turns_run": 0,
+        "citations": [
+          {
+            "citation_id": "c1",
+            "document_filename": "wrong.pdf",
+            "start_page": 1,
+            "end_page": 2,
+            "chunk_id": "00000000-0000-0000-0000-0000000000aa"
+          }
+        ],
+        "metrics": {
+          "answerable": true,
+          "num_citations": 1,
+          "citation_documents_ok": false,
+          "citation_page_hit": false,
+          "abstained": false,
+          "false_abstention": false,
+          "correct_abstention": null
+        }
+      },
+      "errors": []
+    }
+  ],
+  "summary": {
+    "total_questions": 4,
+    "answerable": 3,
+    "unanswerable": 1,
+    "errored_questions": 0,
+    "error_rate": 0.0,
+    "engines": {
+      "vector": {
+        "engine": "vector",
+        "evaluated": 3,
+        "document_hit_rate": 0.6666666666666666,
+        "page_hit_rate": 0.6666666666666666,
+        "mrr": 0.6666666666666666,
+        "avg_latency_ms": 0.8833056587415437
+      },
+      "keyword": {
+        "engine": "keyword",
+        "evaluated": 3,
+        "document_hit_rate": 0.3333333333333333,
+        "page_hit_rate": 0.3333333333333333,
+        "mrr": 0.3333333333333333,
+        "avg_latency_ms": 0.6740976823493838
+      },
+      "hybrid": {
+        "engine": "hybrid",
+        "evaluated": 3,
+        "document_hit_rate": 0.6666666666666666,
+        "page_hit_rate": 0.6666666666666666,
+        "mrr": 0.6666666666666666,
+        "avg_latency_ms": 0.5530556663870811
+      }
+    },
+    "chat": {
+      "evaluated": 4,
+      "answerable_evaluated": 3,
+      "unanswerable_evaluated": 1,
+      "citation_document_accuracy": 0.6666666666666666,
+      "citation_page_hit_rate": 0.6666666666666666,
+      "false_abstention_rate": 0.0,
+      "abstention_rate": 1.0,
+      "avg_latency_ms": 0.547208750504069
+    },
+    "notes": [
+      "Cross-document scoring: page metrics are against the primary (first-listed) expected document only; secondary documents are credited at the document level.",
+      "Abstention is a deterministic proxy: a chat turn counts as abstained iff it returned zero citations (the answer text is not inspected)."
+    ]
+  }
+}
