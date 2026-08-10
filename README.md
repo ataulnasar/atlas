@@ -131,6 +131,52 @@ See [`docs/architecture/overview.md`](docs/architecture/overview.md) for more de
 [`docs/retrieval-quality.md`](docs/retrieval-quality.md) shows the three retrieval engines
 compared on real queries — and why hybrid RRF is the default — with reproducible commands.
 
+## Evaluation results
+
+Atlas ships with a committed evaluation of the reference vertical, run by `atlas-evals` against a
+30-question golden dataset
+([`atlas-evals/datasets/demo-golden.json`](atlas-evals/datasets/demo-golden.json), `top_k=5`,
+generation model `gpt-5-mini`). Full report, per-category breakdown, and failure evidence:
+[`docs/eval-report-baseline.md`](docs/eval-report-baseline.md).
+
+**Retrieval** (n = 27 answerable questions):
+
+| Engine | doc-hit | page-hit | MRR |
+|--------|:-------:|:--------:|:-----:|
+| vector | 0.96 | 0.70 | 0.526 |
+| hybrid | 0.93 | 0.67 | 0.462 |
+| keyword | 0.48 | 0.19 | 0.130 |
+
+**Chat / generation:**
+
+- **Citation-document accuracy 0.76**, citation-page hit-rate **0.78** — answers grounded in the
+  right source document and page.
+- **Abstention 3/3** — every unanswerable question was correctly declined, including
+  topically-adjacent traps written to bait a hallucination. False-abstention on answerable
+  questions: 0.07.
+- **~$0.11** total for the 30-question run (real token usage at static `gpt-5-mini` rates).
+
+Two results stated honestly:
+
+- **Hybrid trails pure vector on this dataset.** The keyword engine AND-s a query's content words
+  (a chunk must contain *all* of them), so it has a recall gap, and RRF rewards cross-engine
+  agreement — which demotes the vector-only chunks that were often the right ones. Here that is a
+  mild fusion cost; the full mechanism, with commands, is in
+  [`docs/retrieval-quality.md`](docs/retrieval-quality.md). Hybrid stays the default because
+  cross-engine corroboration is the safer general bet.
+- **Citation-document 0.76 is a strict-subset floor, not a quality ceiling.** The metric fails an
+  answer that cites *any* document outside the expected set, so a legitimate secondary or
+  neighbouring citation counts against it — most of the six misses are exactly that, not wrong
+  answers. See the per-case
+  [failure-evidence adjudication](docs/eval-report-baseline.md#failure-evidence-citation-document-misses).
+
+Reproduce against a running stack (see the [Quickstart](#quickstart) to bring one up):
+
+```bash
+cd atlas-evals
+uv run atlas-eval run --dataset demo-golden --base-url http://localhost:8080
+```
+
 ## Quickstart
 
 > **Prerequisites:** Docker (with the Compose v2 plugin) and Git. Path B additionally needs
