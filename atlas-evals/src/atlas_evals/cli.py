@@ -13,6 +13,8 @@ import typer
 from atlas_evals import __version__
 from atlas_evals.client import AtlasClient
 from atlas_evals.models.golden import GoldenDataset
+from atlas_evals.report import render_html, render_markdown
+from atlas_evals.results import RunResults
 from atlas_evals.runner import ALL_ENGINES, ERROR_EXIT_THRESHOLD, run_dataset
 
 app = typer.Typer(
@@ -133,6 +135,23 @@ def run(
             err=True,
         )
         raise typer.Exit(code=1)
+
+
+@app.command()
+def report(
+    results_file: Path = typer.Argument(..., help="Path to a run results JSON file."),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Write to this file (else stdout)."),
+    as_html: bool = typer.Option(False, "--html", help="Render HTML instead of Markdown."),
+) -> None:
+    """Render a Markdown (or --html) report from a results file."""
+    results = RunResults.model_validate_json(results_file.read_text(encoding="utf-8"))
+    content = render_html(results) if as_html else render_markdown(results)
+    if out is None:
+        typer.echo(content)
+    else:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(content, encoding="utf-8")
+        typer.echo(f"Wrote {out}")
 
 
 def main() -> None:
