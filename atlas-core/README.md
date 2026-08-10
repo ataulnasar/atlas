@@ -5,10 +5,10 @@ embedding, vector retrieval, and grounded generation.
 
 ## Stack
 
-- Java 21, Spring Boot 3.x
-- Maven (multi-module if/when split by concern: `ingestion`, `retrieval`, `api`)
-- Vector store: TBD (pluggable — pgvector / Qdrant / OpenSearch)
-- LLM provider: pluggable via a thin client abstraction
+- Java 21 (enforced at build time via the Maven Enforcer plugin), Spring Boot 3.x
+- Maven (single module)
+- Vector store: PostgreSQL 16 + pgvector (see `docs/adr` — not swappable in v1)
+- LLM/embedding provider: pluggable via a thin client abstraction (OpenAI in v1)
 
 ## Structure
 
@@ -20,12 +20,16 @@ src/test/java/com/atlas/core/   # unit + integration tests
 
 ## Running locally
 
-```
-./mvnw spring-boot:run
-```
+Two options — see the root [Quickstart](../README.md#quickstart) for the full recipe:
 
-Requires the local dependencies in `../docker` (vector store, object storage) to be running.
+- **All in Docker** (recommended): `docker compose -f ../docker/docker-compose.yml up -d`.
+- **App on host, DB in Docker**: start just Postgres with
+  `docker compose -f ../docker/docker-compose.yml up -d postgres`, then run the app on the host:
 
-## Status
+  ```
+  ./mvnw spring-boot:run
+  ```
 
-Scaffold only — v1 implementation in progress.
+  The app needs the Postgres dependency in `../docker` running. On the host, point
+  `SPRING_DATASOURCE_PASSWORD` at the `POSTGRES_PASSWORD` you set in `docker/.env` (the built-in
+  default is `atlas`), and set `ATLAS_STORAGE_PATH` to a writable directory (e.g. `./data/documents`).

@@ -97,25 +97,80 @@ compared on real queries — and why hybrid RRF is the default — with reproduc
 
 ## Quickstart
 
-> Placeholder — filled in as `atlas-core` and `docker` scaffolding are built out.
+> **Prerequisites:** Docker (with the Compose v2 plugin) and Git. Path B additionally needs
+> **JDK 21** (the build enforces it) and [uv](https://docs.astral.sh/uv/). Corpus ingestion needs
+> `curl` and `jq`.
 
 ```bash
-# 1. Clone
 git clone https://github.com/ataulnasar/atlas.git
 cd atlas
+cp docker/.env.example docker/.env      # at minimum set POSTGRES_PASSWORD
+```
 
-# 2. Start local infra (vector store) and atlas-core
-cp docker/.env.example docker/.env
-docker compose -f docker/docker-compose.yml up -d
+For grounded, **cited** answers (not just keyword retrieval), set `SPRING_AI_OPENAI_API_KEY` in
+`docker/.env` before starting — it powers both embeddings and generation. Leaving it empty is fine
+to try retrieval, but chat will report generation disabled.
 
-# 3. Run atlas-core directly instead, if iterating locally
+Before starting the stack, check nothing else already holds the ports it binds — Postgres `5432`
+and atlas-core `8080` (the prod profile also uses `80`):
+
+```bash
+docker ps --format '{{.Names}}\t{{.Ports}}' | grep -E '5432|8080' || echo "ports free"
+```
+
+(If a port is taken, either stop the other container or remap Atlas — see `ATLAS_CORE_PORT` /
+`POSTGRES_PORT` in [`docker/README.md`](docker/README.md).)
+
+### Path A — everything in Docker (recommended)
+
+```bash
+docker compose -f docker/docker-compose.yml up -d          # Postgres + atlas-core
+curl -fsS http://localhost:8080/actuator/health            # {"status":"UP"} (wait ~10s on first boot)
+```
+
+atlas-core is now on `http://localhost:8080`. Rebuild after code changes with `… up -d --build`.
+
+### Path B — hybrid dev (DB in Docker, app on host)
+
+Run only the database in a container and the app on your host — for a debugger, hot reload, or
+faster iteration. **Do not run both the containerized app and the host app on `:8080`.**
+
+```bash
+# 1. Start ONLY Postgres (not the app):
+docker compose -f docker/docker-compose.yml up -d postgres
+#    If you already ran Path A, stop the containerized app first so :8080 is free:
+#    docker compose -f docker/docker-compose.yml stop atlas-core
+
+# 2. Wire the host app to the containerized DB. The app's built-in datasource default is
+#    user/password "atlas"; export the password you actually set in docker/.env:
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/atlas
+export SPRING_DATASOURCE_USERNAME=atlas
+export SPRING_DATASOURCE_PASSWORD='<your POSTGRES_PASSWORD from docker/.env>'
+export ATLAS_STORAGE_PATH=./data/documents
+#    Optional — enable generation and require the API key on the host app too:
+#    export SPRING_AI_OPENAI_API_KEY=sk-...
+#    export ATLAS_API_KEY='<a value your clients will send as X-API-Key>'
+
+# 3. Run the app on the host:
 cd atlas-core
 ./mvnw spring-boot:run
+```
 
-# 4. Run the eval suite against the running instance
-cd ../atlas-evals
+### Ingest a corpus and evaluate
+
+With atlas-core running (either path):
+
+```bash
+# 1. Fetch and ingest the demo EU-regulation corpus.
+#    ingest.sh sends ATLAS_API_KEY as X-API-Key when it's set in your environment.
+./corpus/download.sh
+ATLAS_BASE_URL=http://localhost:8080 ./corpus/ingest.sh
+
+# 2. Diagnose the deployment, then evaluate it:
+cd atlas-evals
 uv sync
-uv run -m evals.run --target http://localhost:8080
+uv run atlas-eval doctor --base-url http://localhost:8080 --fix-hints
+uv run atlas-eval run --dataset mini-golden --base-url http://localhost:8080
 ```
 
 Full setup instructions live in each module's README: [`atlas-core`](atlas-core/README.md),
