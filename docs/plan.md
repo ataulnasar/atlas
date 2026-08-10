@@ -1328,7 +1328,12 @@ Implement a small Java Picocli CLI command 'atlas doctor'. It should check Atlas
 
 **Definition of Done:** atlas doctor reports local environment health.
 
-### Clean-machine quickstart test — 4h
+### Clean-machine quickstart test — 4h  ✅ Done
+
+> **Result:** Ran the stranger test on a fresh prod install and reached a cited answer; the friction
+> log was fixed in follow-up commits — quickstart rewritten into Path A/B, configurable
+> `ATLAS_CORE_PORT`, up-front required-secrets block, ingest.sh embedding-retry pass, Java-21 build
+> enforcement, and a runbook entry for the compound port-bind → `UnknownHostException` failure.
 
 **Priority:** High  
 **Labels:** qa,quickstart
