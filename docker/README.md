@@ -40,6 +40,10 @@ docker compose -f docker-compose.prod.yml up -d --build
   the UI/build base images are pinned to minor tags. `restart: unless-stopped` on every service.
 - **Database not exposed.** `postgres` has no `ports:` — it is reachable only on the internal
   compose network. Only `atlas-core` (`:8080`) and the UI (`:80`) are published to the host.
+- **Configurable UI ingress port.** The UI publishes `${ATLAS_UI_PORT:-80}:80`. If another
+  service already owns `:80` on the host (a real prod boot hit this), set `ATLAS_UI_PORT` in
+  `.env` — e.g. `ATLAS_UI_PORT=8888` — and reach the app at `http://<host>:8888` (the API at
+  `http://<host>:8888/api`). `atlas-core`'s host port is likewise `${SERVER_PORT:-8080}`.
 - **Secrets are required, no keyless fallback.** `POSTGRES_PASSWORD`, `ATLAS_API_KEY`, and
   `SPRING_AI_OPENAI_API_KEY` use compose's `${VAR:?err}` form, so `up` **aborts loudly** if any
   is unset or empty. (Keyless auth is a dev-only affordance and is intentionally impossible here.)

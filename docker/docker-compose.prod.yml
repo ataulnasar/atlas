@@ -84,7 +84,8 @@ services:
     image: atlas-ui:prod
     restart: unless-stopped
     ports:
-      - "${UI_PORT:-80}:80"
+      # Host ingress port is configurable — a real prod boot collided with another service on :80.
+      - "${ATLAS_UI_PORT:-80}:80"
     depends_on:
       atlas-core:
         condition: service_healthy
