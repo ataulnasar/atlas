@@ -280,16 +280,13 @@ backup/restore, rollback, troubleshooting) — with `atlas-eval doctor` as the f
 
 ## Roadmap
 
-Beyond v1, in rough priority order:
-
-- **Retrieval quality** — re-ranking, query rewriting.
-- **Online evals** — continuous quality monitoring against live production traffic.
-- **Multi-tenant support** — shared-service deployment model.
-- **UI beyond the minimal chat page** — an admin/debugging frontend for ingestion status and
-  query tracing.
-- **Managed control plane** — hosted/managed offering, once the self-hosted model is proven out.
-
-Roadmap items are tracked as GitHub issues; see the repository's issue tracker for current status.
+The post-v1 roadmap — with the concrete v1 finding behind each item and, for quality changes, the
+baseline number it must beat — is indexed in [`ROADMAP.md`](ROADMAP.md) and tracked as GitHub
+issues. Near-term (v1.1) work centres on retrieval and eval improvements the baseline surfaced
+(keyword OR-semantics, citation precision/recall, per-document page scoring); larger v2 items
+(cross-encoder re-ranking, multi-turn query rewriting) are parked per
+[ADR 0006](docs/adr/0006-v1-exclusions.md). Broader directions — online evals, multi-tenancy, a
+managed control plane — remain out of scope for now (see [What is not in v1](#what-is-not-in-v1)).
 
 The working backlog for getting to v1 itself is tracked in [`docs/plan.md`](docs/plan.md).
 
