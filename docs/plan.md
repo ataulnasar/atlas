@@ -993,9 +993,15 @@ Create a demo script for Atlas v1 showing upload, search, chat, citations, and s
 **Definition of Done:** Demo video exists for README/social posts.
 
 
-## Phase 4 — Python Evals
+## Phase 4 — Python Evals  ✅ Complete
 
-### Create atlas-evals Python package — 3h
+> **Phase 4 complete.** Typed API client + models, the golden dataset schema, the 30-question demo golden dataset, deterministic retrieval/chat metrics, the `run`/`report`/`compare` CLI, and the CI harness smoke eval (mock Atlas) are shipped; the v1 baseline is [`docs/eval-report-baseline.md`](eval-report-baseline.md).
+>
+> **Deferred to v1.1 (roadmap-bound):**
+> - _Ragas/DeepEval integration_ — descoped from v1 by decision; the deterministic metrics meet the v1 quality bar.
+> - _Citation precision/recall metrics_ — motivated by the baseline report's failure-evidence findings: the strict citation-document subset check penalizes legitimate secondary/neighbour citations, so precision/recall would separate over-citation from wrong-citation.
+
+### Create atlas-evals Python package — 3h  ✅ Done
 
 **Priority:** High  
 **Labels:** python,evals
@@ -1018,7 +1024,7 @@ Create Python 3.12 package atlas-evals using uv. Add ruff, pytest, typer, mypy (
 
 **Definition of Done:** atlas-eval command runs locally.
 
-### Define golden dataset schema — 3h
+### Define golden dataset schema — 3h  ✅ Done
 
 **Priority:** High  
 **Labels:** evals,dataset
@@ -1043,7 +1049,7 @@ Design golden dataset schema for Atlas evals. Include question, expected answer 
 
 **Definition of Done:** Dataset schema documented with example file.
 
-### Implement Python API client — 3h
+### Implement Python API client — 3h  ✅ Done
 
 **Priority:** High  
 **Labels:** python,api
@@ -1066,7 +1072,7 @@ Implement a typed Python client for atlas-evals that calls the running Java Atla
 
 **Definition of Done:** Eval harness can call local Java app.
 
-### Implement atlas-eval run command — 5h
+### Implement atlas-eval run command — 5h  ✅ Done
 
 **Priority:** High  
 **Labels:** python,cli
@@ -1089,7 +1095,7 @@ Implement 'atlas-eval run --dataset path' using Typer. Load dataset, call Atlas 
 
 **Definition of Done:** One command executes a dataset.
 
-### Implement deterministic retrieval metrics — 5h
+### Implement deterministic retrieval metrics — 5h  ✅ Done
 
 **Priority:** High  
 **Labels:** metrics,evals
@@ -1112,7 +1118,7 @@ Implement deterministic retrieval metrics for Atlas evals: top-k hit rate, MRR, 
 
 **Definition of Done:** Metrics are computed without LLM dependency.
 
-### Add optional Ragas/DeepEval metrics — 5h
+### Add optional Ragas/DeepEval metrics — 5h  ⏸ Deferred to v1.1
 
 **Priority:** Medium  
 **Labels:** ragas,deepeval
@@ -1135,7 +1141,7 @@ Integrate optional Ragas or DeepEval metrics into atlas-evals. Make them opt-in 
 
 **Definition of Done:** LLM-based evals can run manually.
 
-### Generate markdown/HTML report — 4h
+### Generate markdown/HTML report — 4h  ✅ Done
 
 **Priority:** High  
 **Labels:** reporting,evals
@@ -1158,7 +1164,7 @@ Implement 'atlas-eval report' that generates Markdown and optional HTML benchmar
 
 **Definition of Done:** Benchmark report generated from run output.
 
-### Implement compare command — 3h
+### Implement compare command — 3h  ✅ Done
 
 **Priority:** Medium  
 **Labels:** regression,evals
@@ -1181,7 +1187,7 @@ Implement 'atlas-eval compare run1 run2' to compare metrics, detect regressions,
 
 **Definition of Done:** Two runs can be compared.
 
-### Create demo golden dataset — 5h
+### Create demo golden dataset — 5h  ✅ Done
 
 **Priority:** High  
 **Labels:** dataset,demo
@@ -1204,7 +1210,7 @@ Create a golden dataset of around 20 questions for the Atlas demo corpus. Includ
 
 **Definition of Done:** Dataset runs end-to-end and produces useful scores.
 
-### Add CI smoke eval — 3h
+### Add CI smoke eval — 3h  ✅ Done
 
 **Priority:** Medium  
 **Labels:** ci,evals
