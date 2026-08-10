@@ -137,7 +137,9 @@ aborts loudly if any is missing — there is no keyless fallback), healthchecks 
 service, and serves the built React UI behind nginx (which reverse-proxies `/api` to `atlas-core`,
 so the whole app is one same-origin ingress on `:80`). Backup/restore and the full rationale are in
 the [`docker` README](docker/README.md#deploy-production-profile). The reference deployment this
-profile is meant to run is documented in [`atlas-fde/demo-vertical.md`](atlas-fde/demo-vertical.md).
+profile is meant to run is documented in [`atlas-fde/demo-vertical.md`](atlas-fde/demo-vertical.md),
+and [`atlas-fde/runbook.md`](atlas-fde/runbook.md) is the operator's guide (install, upgrade,
+backup/restore, rollback, troubleshooting) — with `atlas-eval doctor` as the first diagnostic step.
 
 ## Roadmap
 

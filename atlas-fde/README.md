@@ -6,9 +6,18 @@ Forward-deployed engineering playbooks and templates for standing up Atlas at a 
 
 ```
 demo-vertical.md   # the reference deployment: EU digital-regulation assistant (what/who/baseline/demo)
+runbook.md         # operating a prod deployment: install, upgrade, backup/restore, rollback, troubleshooting
 playbooks/         # step-by-step runbooks: onboarding, data ingestion, cutover, incident response
 templates/         # reusable config/checklist templates for new deployments
 ```
+
+## Operating a deployment
+
+[`runbook.md`](runbook.md) is the operator's guide for a production-profile deployment — install and
+secrets (including the two-distinct-keys explanation), upgrades (Flyway runs on boot), a tested
+backup/restore procedure, rollback across migration boundaries, a symptom→cause→fix troubleshooting
+table drawn from real incidents, and monitoring basics. Its first diagnostic step is
+`atlas-eval doctor`.
 
 ## Reference deployment
 
