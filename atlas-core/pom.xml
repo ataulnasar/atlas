@@ -150,6 +150,30 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- Fail fast on the wrong JDK. Atlas targets Java 21 (LTS); without this the build
+           silently compiles on a newer JDK (e.g. 25) — a real clean-machine friction. The
+           enforce goal binds to the validate phase, so a wrong JDK stops the build up front. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-java-21</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[21,22)</version>
+                  <message>Atlas requires Java 21 (LTS). Point JAVA_HOME at a JDK 21 build and re-run.</message>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
