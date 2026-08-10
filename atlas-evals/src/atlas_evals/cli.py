@@ -12,6 +12,8 @@ import typer
 
 from atlas_evals import __version__
 from atlas_evals.client import AtlasClient
+from atlas_evals.compare import DEFAULT_TOLERANCE, compare_runs
+from atlas_evals.compare import render_markdown as render_compare_markdown
 from atlas_evals.models.golden import GoldenDataset
 from atlas_evals.report import render_html, render_markdown
 from atlas_evals.results import RunResults
@@ -152,6 +154,36 @@ def report(
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(content, encoding="utf-8")
         typer.echo(f"Wrote {out}")
+
+
+@app.command()
+def compare(
+    baseline: Path = typer.Argument(..., help="Baseline results JSON."),
+    candidate: Path = typer.Argument(..., help="Candidate results JSON."),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Write to this file (else stdout)."),
+    tolerance: float = typer.Option(
+        DEFAULT_TOLERANCE, "--tolerance", help="Max allowed aggregate regression before failing."
+    ),
+) -> None:
+    """Compare two results files; exit 1 if any gated metric regressed beyond --tolerance."""
+    base = RunResults.model_validate_json(baseline.read_text(encoding="utf-8"))
+    cand = RunResults.model_validate_json(candidate.read_text(encoding="utf-8"))
+    comparison = compare_runs(base, cand, tolerance=tolerance)
+
+    content = render_compare_markdown(comparison)
+    if out is None:
+        typer.echo(content)
+    else:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(content, encoding="utf-8")
+        typer.echo(f"Wrote {out}")
+
+    if not comparison.schema_ok:
+        typer.echo("schema_version mismatch — runs are not comparable", err=True)
+        raise typer.Exit(code=2)
+    if comparison.has_gated_regression():
+        typer.echo("regression detected beyond tolerance", err=True)
+        raise typer.Exit(code=1)
 
 
 def main() -> None:
