@@ -25,8 +25,19 @@ derived from the `POSTGRES_*` values in `.env` — no separate datasource config
 
 ## Deploy (production profile)
 
-`docker-compose.prod.yml` is a single-host production-leaning profile. Run it from this
-directory so `${VARS}` interpolate from `./.env`:
+`docker-compose.prod.yml` is a single-host production-leaning profile. It **requires three
+secrets** and refuses to start without them. Set all three in `docker/.env` **before** booting:
+
+```dotenv
+# docker/.env — REQUIRED by the prod profile (no defaults, no keyless fallback):
+POSTGRES_PASSWORD=…          # the database password
+ATLAS_API_KEY=…              # Atlas's own door key (the X-API-Key clients must send)
+SPRING_AI_OPENAI_API_KEY=…   # the OpenAI credential (embeddings + generation)
+```
+
+Compose checks these **one at a time**, so a missing one aborts with a single-variable error
+(`… is required in production`) — set all three up front to avoid a boot-fix-boot loop. Then, from
+this directory (so `${VARS}` interpolate from `./.env`):
 
 ```
 docker compose -f docker-compose.prod.yml up -d --build
@@ -40,10 +51,12 @@ docker compose -f docker-compose.prod.yml up -d --build
   the UI/build base images are pinned to minor tags. `restart: unless-stopped` on every service.
 - **Database not exposed.** `postgres` has no `ports:` — it is reachable only on the internal
   compose network. Only `atlas-core` (`:8080`) and the UI (`:80`) are published to the host.
-- **Configurable UI ingress port.** The UI publishes `${ATLAS_UI_PORT:-80}:80`. If another
-  service already owns `:80` on the host (a real prod boot hit this), set `ATLAS_UI_PORT` in
-  `.env` — e.g. `ATLAS_UI_PORT=8888` — and reach the app at `http://<host>:8888` (the API at
-  `http://<host>:8888/api`). `atlas-core`'s host port is likewise `${SERVER_PORT:-8080}`.
+- **Configurable host ports.** The UI publishes `${ATLAS_UI_PORT:-80}:80` and atlas-core publishes
+  `${ATLAS_CORE_PORT:-8080}:8080` — both **host-side only** (the containers always listen on 80 /
+  8080 internally, and nginx proxies `/api` to the internal `atlas-core:8080` regardless of the
+  host mapping). If a host port is already taken (a real prod boot hit `:80`), set `ATLAS_UI_PORT`
+  / `ATLAS_CORE_PORT` in `.env` — e.g. `ATLAS_UI_PORT=8888` — and reach the app there
+  (`http://<host>:8888`, API at `http://<host>:8888/api`).
 - **Secrets are required, no keyless fallback.** `POSTGRES_PASSWORD`, `ATLAS_API_KEY`, and
   `SPRING_AI_OPENAI_API_KEY` use compose's `${VAR:?err}` form, so `up` **aborts loudly** if any
   is unset or empty. (Keyless auth is a dev-only affordance and is intentionally impossible here.)

@@ -5,7 +5,8 @@ services:
     build:
       context: ../atlas-core
     ports:
-      - "${SERVER_PORT:-8080}:8080"
+      # Host port only; the app always listens on 8080 inside the container.
+      - "${ATLAS_CORE_PORT:-8080}:8080"
     env_file:
       - .env
     environment:
