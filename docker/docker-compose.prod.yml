@@ -1,0 +1,105 @@
+# Production-leaning compose profile for a single-host Atlas deployment.
+#
+# How it differs from docker-compose.yml (local dev):
+#   - Pinned images (postgres by immutable digest) and `restart: unless-stopped` on every service.
+#   - Postgres is NOT published to the host — only atlas-core (:8080) and the UI (:80) are.
+#   - Required secrets use the ${VAR:?err} form, so `up` fails loudly if any is unset. Keyless
+#     auth is a dev-only affordance and is intentionally impossible here.
+#   - Healthchecks on all three services, resource limits, and named volumes with a documented
+#     pg_dump backup/restore pair (see docker/README.md "Deploy").
+#   - The built React UI is served by a small nginx service that also reverse-proxies /api to
+#     atlas-core (one same-origin ingress, no CORS). Chosen over baking the UI into the Java image
+#     so the UI and API build/scale independently and the atlas-core image stays unchanged from dev.
+#
+# Run from this directory so ${VARS} interpolate from ./.env (a missing required var aborts):
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# NOTE: this publishes :8080 and :80 — stop the dev stack first if it is running on those ports.
+
+name: atlas-prod
+
+services:
+  # PostgreSQL 16 + pgvector — pinned by digest for reproducible deploys. Not published: the
+  # database is reachable only on the internal compose network.
+  postgres:
+    image: pgvector/pgvector:pg16@sha256:7d400e340efb42f4d8c9c12c6427adb253f726881a9985d2a471bf0eed824dff
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in production}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atlas} -d ${POSTGRES_DB:-atlas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  atlas-core:
+    build:
+      context: ../atlas-core
+    image: atlas-core:prod
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-atlas}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-atlas}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in production}
+      ATLAS_STORAGE_PATH: /data/documents
+      # Required in production — there is no keyless fallback (that is a dev-only affordance).
+      ATLAS_API_KEY: ${ATLAS_API_KEY:?ATLAS_API_KEY is required in production}
+      SPRING_AI_OPENAI_API_KEY: ${SPRING_AI_OPENAI_API_KEY:?SPRING_AI_OPENAI_API_KEY is required in production}
+      # Optional deployment-specific parsing noise filter (see atlas-fde/demo-vertical.md).
+      ATLAS_PARSING_STRIP_LINE_PATTERNS: ${ATLAS_PARSING_STRIP_LINE_PATTERNS:-}
+    volumes:
+      - atlas-core-storage:/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # eclipse-temurin:21-jre ships curl; hit the actuator health endpoint the app already exposes.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+
+  # Built React UI served by nginx, reverse-proxying /api to atlas-core (see ../atlas-ui/nginx.conf).
+  atlas-ui:
+    build:
+      context: ../atlas-ui
+    image: atlas-ui:prod
+    restart: unless-stopped
+    ports:
+      - "${UI_PORT:-80}:80"
+    depends_on:
+      atlas-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+volumes:
+  postgres-data:
+  atlas-core-storage:

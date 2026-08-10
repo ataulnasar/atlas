@@ -38,6 +38,9 @@ generation, with a Python-based quality bar (`atlas-evals`) and a documented dep
 - **Pluggable LLM/embedding provider** — abstracted behind a thin client interface in `atlas-core`.
 - **Offline eval suite** (`atlas-evals`) — retrieval precision/recall and answer-faithfulness
   checks run against golden Q&A datasets, driven from Python against `atlas-core`'s HTTP API.
+- **Reference deployment** (`atlas-fde/demo-vertical.md`) — the EU digital-regulation knowledge
+  assistant, documented as the reference vertical: corpus, measured baseline, demo script, and how
+  an FDE clones it for a customer corpus.
 - **FDE playbooks** (`atlas-fde`) — onboarding runbook and deployment checklist template covering
   prerequisites, ingestion, eval sign-off, go-live, and rollback.
 - **Local dev environment** (`docker`) — `docker-compose.yml` to run `atlas-core` and its vector
@@ -117,6 +120,24 @@ uv run -m evals.run --target http://localhost:8080
 
 Full setup instructions live in each module's README: [`atlas-core`](atlas-core/README.md),
 [`atlas-evals`](atlas-evals/README.md), [`docker`](docker/README.md).
+
+## Deploy
+
+For a single-host production-leaning deployment, use the compose profile in
+[`docker/docker-compose.prod.yml`](docker/docker-compose.prod.yml):
+
+```bash
+cd docker
+# set POSTGRES_PASSWORD, ATLAS_API_KEY, SPRING_AI_OPENAI_API_KEY in .env — all required
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+It pins images, keeps the database off the host network, **requires** the secrets above (startup
+aborts loudly if any is missing — there is no keyless fallback), healthchecks and rate-limits every
+service, and serves the built React UI behind nginx (which reverse-proxies `/api` to `atlas-core`,
+so the whole app is one same-origin ingress on `:80`). Backup/restore and the full rationale are in
+the [`docker` README](docker/README.md#deploy-production-profile). The reference deployment this
+profile is meant to run is documented in [`atlas-fde/demo-vertical.md`](atlas-fde/demo-vertical.md).
 
 ## Roadmap
 
